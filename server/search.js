@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
-import cheerio from 'cheerio';
+import 'isomorphic-fetch';
+import * as cheerio from 'cheerio';
 
 const BASE_URL = "https://va.mite.gov.it";
 const VALID_STATUSES = [
@@ -34,8 +34,7 @@ export const handler = async (event) => {
     const params = new URLSearchParams({
       Testo: keyword,
       t: 'o',
-      pagina: page,
-      _RequestVerificationToken: '' // Add empty token as seen in screenshot URL
+      pagina: page
     });
 
     const url = `${BASE_URL}${searchEndpoint}?${params}`;
@@ -45,25 +44,24 @@ export const handler = async (event) => {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7' // Changed to Italian first
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7'
       }
     });
 
-
     if (!response.ok) {
-        console.error('Search failed:', {
-          status: response.status,
-          statusText: response.statusText,
-          url: url
-        });
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.error('Search failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url
+      });
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-      
     const html = await response.text();
     const $ = cheerio.load(html);
     let projects = [];
 
+    // Parse the table rows
     $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
       const cells = $(row).find('td');
       if (cells.length >= 5) {
@@ -87,30 +85,40 @@ export const handler = async (event) => {
       }
     });
 
-    return {
-        statusCode: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({
-          projects,
-          totalPages,
-          currentPage: parseInt(page),
-          total: projects.length
-        })
-      };
-    } catch (error) {
-      console.error('Search error:', error);
-      return {
-        statusCode: 500,
-        headers: {
-          'Access-Control-Allow-Origin': '*'
-        },
-        body: JSON.stringify({
-          error: 'Failed to fetch data',
-          details: error.message
-        })
-      };
+    // Calculate total pages from pagination if available
+    let totalPages = 1;
+    const paginationText = $('.pagination').text();
+    if (paginationText) {
+      const match = paginationText.match(/di (\d+)/);
+      if (match) {
+        totalPages = parseInt(match[1]);
+      }
     }
-  };
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        projects,
+        totalPages,
+        currentPage: parseInt(page),
+        total: projects.length
+      })
+    };
+  } catch (error) {
+    console.error('Search error:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        error: 'Failed to fetch data',
+        details: error.message
+      })
+    };
+  }
+};
