@@ -6,6 +6,17 @@ import * as cheerio from 'cheerio';
 const app = express();
 const PORT = 3001;
 
+
+const VALID_STATUSES = [
+  'Valutazione preliminare',
+  'Verifica di Ottemperanza',
+  'Valutazione Impatto Ambientale',
+  'Valutazione Impatto Ambientale (PNIEC-PNRR)',
+  'Verifica di Assoggettabilità a VIA',
+  'Provvedimento Unico in materia Ambientale (PNIEC-PNRR)',
+  'Definizione contenuti SIA (PNIEC-PNRR)'
+];
+
 // Configure CORS
 app.use(cors());
 app.use(express.json());
@@ -19,7 +30,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/search', async (req, res) => {
   try {
-    const { keyword = '', page = 1, searchType = 'o' } = req.query;
+    const { keyword = '', page = 1, status } = req.query;
     
     if (!keyword.trim()) {
       return res.status(400).json({ error: 'Keyword is required' });
@@ -28,7 +39,7 @@ app.get('/api/search', async (req, res) => {
     const searchEndpoint = "/it-IT/Ricerca/ViaLibera";
     const params = new URLSearchParams({
       Testo: keyword,
-      t: searchType,
+      t: 'o', // Keep default search type
       pagina: page
     });
 
@@ -49,28 +60,35 @@ app.get('/api/search', async (req, res) => {
 
     const html = await response.text();
     const $ = cheerio.load(html);
-    const projects = [];
+    let projects = [];
 
+    // Parse the table rows
     $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
       const cells = $(row).find('td');
       if (cells.length >= 5) {
-        const infoLink = $(cells[3]).find('a').attr('href');
-        const docLink = $(cells[4]).find('a').attr('href');
+        const projectStatus = $(cells[2]).text().trim();
         
-        const project = {
-          title: $(cells[0]).text().trim(),
-          proponent: $(cells[1]).text().trim(),
-          status: $(cells[2]).text().trim(),
-          url: infoLink ? new URL(infoLink, BASE_URL).href : '',
-          doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
-          id: infoLink ? infoLink.split('/').pop() : `project-${i}`,
-          include: 'YES'
-        };
-        
-        projects.push(project);
+        // Only add project if status is valid and matches filter (if provided)
+        if ((!status || status === 'all' || projectStatus === status) && 
+            (VALID_STATUSES.includes(projectStatus))) {
+          const infoLink = $(cells[3]).find('a').attr('href');
+          const docLink = $(cells[4]).find('a').attr('href');
+          
+          const project = {
+            title: $(cells[0]).text().trim(),
+            proponent: $(cells[1]).text().trim(),
+            status: projectStatus,
+            url: infoLink ? new URL(infoLink, BASE_URL).href : '',
+            doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
+            id: infoLink ? infoLink.split('/').pop() : `project-${i}`,
+          };
+          
+          projects.push(project);
+        }
       }
     });
 
+    // Parse pagination info
     let totalPages = 1;
     const paginationLabel = $('.pagination .etichettaRicerca').text();
     const match = paginationLabel.match(/Pagina\s+(\d+)\s+di\s+(\d+)/);
@@ -78,13 +96,14 @@ app.get('/api/search', async (req, res) => {
       totalPages = parseInt(match[2]);
     }
 
-    console.log(`Found ${projects.length} projects, total pages: ${totalPages}`);
+    console.log(`Found ${projects.length} projects (after filtering), total pages: ${totalPages}`);
     
     res.json({
       projects,
       totalPages,
       currentPage: parseInt(page),
-      total: projects.length
+      total: projects.length,
+      validStatuses: VALID_STATUSES // Include valid statuses in response
     });
 
   } catch (error) {
