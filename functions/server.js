@@ -1,18 +1,32 @@
 const express = require('express');
 const serverless = require('serverless-http');
+const cors = require('cors');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
+
 const app = express();
 const router = express.Router();
-const cors = require('cors');
 
-// Enable CORS
+// Constants
+const BASE_URL = "https://va.mite.gov.it";
+const VALID_STATUSES = [
+  'Valutazione preliminare',
+  'Verifica di Ottemperanza',
+  'Valutazione Impatto Ambientale',
+  'Valutazione Impatto Ambientale (PNIEC-PNRR)',
+  'Verifica di Assoggettabilità a VIA',
+  'Provvedimento Unico in materia Ambientale (PNIEC-PNRR)',
+  'Definizione contenuti SIA (PNIEC-PNRR)'
+];
+
+// Middleware
 app.use(cors());
+app.use(express.json());
 
-// Your existing routes, but with the base path modified
+// Routes
 router.get('/', (req, res) => {
-  res.json({ message: 'API is running' });
+  res.json({ status: 'ok', message: 'Server is running' });
 });
-
-
 router.get('/api/search', async (req, res) => {
 
 try {

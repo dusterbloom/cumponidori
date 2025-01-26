@@ -1,5 +1,15 @@
 [build]
-  functions = "functions-build"
+  functions = "functions"
+  command = "npm run build"
+
+[functions]
+  external_node_modules = ["express", "cheerio"]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/server/:splat"
+  status = 200
 
 [dev]
   publish = "dist"
