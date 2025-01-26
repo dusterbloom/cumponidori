@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import {
   Table,
@@ -9,16 +11,18 @@ import {
   Paper,
   Link,
   Pagination,
-  Box
+  Box,
+  Checkbox
 } from '@mui/material';
 
-const ResultsTable = ({ results, page, totalPages, onPageChange }) => {
+const ResultsTable = ({ results, page, totalPages, onPageChange, selectedProjects, onSelectProject }) => {
   return (
     <Box sx={{ mb: 4 }}>
       <TableContainer component={Paper} sx={{ mb: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Select</TableCell>
               <TableCell>Title</TableCell>
               <TableCell>Proponent</TableCell>
               <TableCell>Status</TableCell>
@@ -29,6 +33,12 @@ const ResultsTable = ({ results, page, totalPages, onPageChange }) => {
           <TableBody>
             {results.map((project) => (
               <TableRow key={project.id || Math.random()}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedProjects.includes(project.id)}
+                    onChange={(e) => onSelectProject(project.id, e.target.checked)}
+                  />
+                </TableCell>
                 <TableCell>{project.title}</TableCell>
                 <TableCell>{project.proponent}</TableCell>
                 <TableCell>{project.status}</TableCell>
