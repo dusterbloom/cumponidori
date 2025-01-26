@@ -13,9 +13,9 @@ const STATUS_OPTIONS = [
 
 const api = axios.create({
   baseURL: import.meta.env.PROD 
-    ? '/api'  // This will be redirected to /.netlify/functions/
+    ? '/.netlify/functions'  // Changed from '/api'
     : 'http://localhost:3001',
-  timeout: 15000,
+    timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   }
