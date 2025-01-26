@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 
 const BASE_URL = "https://va.mite.gov.it";
 const VALID_STATUSES = [
@@ -12,7 +12,14 @@ const VALID_STATUSES = [
   'Definizione contenuti SIA (PNIEC-PNRR)'
 ];
 
-export const handler = async function(event, context) {
+export const handler = async (event) => {
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
+
   try {
     const { keyword = '', page = 1 } = event.queryStringParameters;
 
@@ -27,7 +34,8 @@ export const handler = async function(event, context) {
     const params = new URLSearchParams({
       Testo: keyword,
       t: 'o',
-      pagina: page
+      pagina: page,
+      _RequestVerificationToken: '' // Add empty token as seen in screenshot URL
     });
 
     const url = `${BASE_URL}${searchEndpoint}?${params}`;
@@ -37,14 +45,21 @@ export const handler = async function(event, context) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
+        'Accept-Language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7' // Changed to Italian first
       }
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
 
+    if (!response.ok) {
+        console.error('Search failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: url
+        });
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      
     const html = await response.text();
     const $ = cheerio.load(html);
     let projects = [];
@@ -73,24 +88,29 @@ export const handler = async function(event, context) {
     });
 
     return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ projects })
-    };
-} catch (error) {
-    console.error('Search error:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ 
-        error: 'Failed to fetch data',
-        details: error.message 
-      })
-    };
-  }
-};
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          projects,
+          totalPages,
+          currentPage: parseInt(page),
+          total: projects.length
+        })
+      };
+    } catch (error) {
+      console.error('Search error:', error);
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          error: 'Failed to fetch data',
+          details: error.message
+        })
+      };
+    }
+  };
