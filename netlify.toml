@@ -3,9 +3,9 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/search/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["cheerio"]
+  external_node_modules = ["cheerio", "node-fetch"]
