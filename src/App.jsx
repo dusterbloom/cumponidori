@@ -79,16 +79,21 @@ const App = () => {
     );
   };
 
-
-  const downloadDocument = async (doc) => {
+  const downloadDocument = async (doc, projectTitle) => {
     try {
       if (!doc.downloadUrl) {
         throw new Error('Download URL is missing');
       }
   
-      console.log(`Attempting to download from: ${doc.downloadUrl}`);
+      // Clean up the project title and filename for safe use in filenames
+      const safeProjectTitle = projectTitle.replace(/[/\\?%*:|"<>]/g, '-').substring(0, 50);
+      const safeFilename = doc.filename.replace(/[/\\?%*:|"<>]/g, '-');
       
-      // Use our proxy endpoint instead of direct download
+      // Create a more descriptive filename: projectTitle_originalFilename.pdf
+      const fullFilename = `${safeProjectTitle}_${safeFilename}`;
+      
+      console.log(`Attempting to download: ${fullFilename}`);
+      
       const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
   
       if (!response.ok) {
@@ -100,18 +105,16 @@ const App = () => {
       const link = document.createElement('a');
       link.style.display = 'none';
       link.href = url;
-      link.setAttribute('download', doc.filename || 'document.pdf');
+      link.setAttribute('download', fullFilename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Clean up the URL object after a short delay
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 100);
       
-      console.log(`Successfully downloaded: ${doc.filename}`);
-      // Add a delay between downloads
+      console.log(`Successfully downloaded: ${fullFilename}`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error(`Error downloading ${doc.filename || 'document'}:`, error);
@@ -124,11 +127,35 @@ const App = () => {
     setError(null);
   
     try {
+      // Ask user to select download directory
+      let dirHandle;
+      try {
+        dirHandle = await window.showDirectoryPicker({
+          mode: 'readwrite'
+        });
+      } catch (error) {
+        // User cancelled folder selection or browser doesn't support the API
+        console.log('Folder selection cancelled or not supported, falling back to default downloads');
+      }
+  
       for (const projectId of selectedProjects) {
         const project = results.find((p) => p.id === projectId);
         if (!project) continue;
   
         console.log(`Processing project: ${project.title}`);
+  
+        // If we have a directory handle, create a project subfolder
+        let projectDirHandle;
+        if (dirHandle) {
+          try {
+            const safeFolderName = project.title.replace(/[/\\?%*:|"<>]/g, '-').substring(0, 50);
+            projectDirHandle = await dirHandle.getDirectoryHandle(safeFolderName, { create: true });
+          } catch (error) {
+            console.error('Failed to create project folder:', error);
+            // Fall back to regular downloads if folder creation fails
+            projectDirHandle = null;
+          }
+        }
   
         // Step 1: Get procedure links
         const procedureLinks = await getProcedureLinks(project.url);
@@ -148,7 +175,24 @@ const App = () => {
                   continue;
                 }
                 
-                await downloadDocument(doc);
+                if (projectDirHandle) {
+                  // If we have a directory handle, save to the selected folder
+                  const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
+                  if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                  
+                  const blob = await response.blob();
+                  const safeFilename = doc.filename.replace(/[/\\?%*:|"<>]/g, '-');
+                  const fileHandle = await projectDirHandle.getFileHandle(safeFilename, { create: true });
+                  const writable = await fileHandle.createWritable();
+                  await writable.write(blob);
+                  await writable.close();
+                  
+                  console.log(`Saved ${safeFilename} to selected folder`);
+                } else {
+                  // Fall back to regular download if no directory handle
+                  await downloadDocument(doc, project.title);
+                }
+                
               } catch (error) {
                 console.error(`Failed to download document:`, error);
                 // Continue with next document even if one fails
@@ -156,7 +200,6 @@ const App = () => {
             }
           } catch (error) {
             console.error(`Failed to process procedure ${procedureUrl}:`, error);
-            // Continue with next procedure even if one fails
           }
         }
       }
@@ -169,7 +212,6 @@ const App = () => {
       setDownloadingDocuments(false);
     }
   };
-
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

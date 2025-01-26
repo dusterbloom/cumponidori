@@ -8,26 +8,30 @@
     "dev:server": "node server/index.js",
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "build": "vite build",
+    "netlify-build": "netlify-lambda build functions",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "axios": "^1.6.2",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@mui/material": "^5.14.18",
     "@mui/icons-material": "^5.14.18",
-    "express": "^4.18.2",
+    "@mui/material": "^5.14.18",
+    "axios": "^1.6.2",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
-    "node-fetch": "^3.3.2"
+    "express": "^4.18.2",
+    "netlify-cli": "^18.0.2",
+    "netlify-lambda": "^2.0.16",
+    "node-fetch": "^3.3.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.2.0",
-    "vite": "^5.0.0",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "vite": "^5.0.0"
   }
 }

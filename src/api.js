@@ -12,7 +12,10 @@ const STATUS_OPTIONS = [
 ];
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001', // Add baseURL
+  // In production, this will be the Netlify Functions URL
+  baseURL: import.meta.env.PROD 
+    ? '/.netlify/functions/server'
+    : 'http://localhost:3001',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
