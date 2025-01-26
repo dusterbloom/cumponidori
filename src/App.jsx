@@ -80,12 +80,16 @@ const App = () => {
   };
 
 
-  
-  const downloadDocument = async (downloadUrl, filename) => {
+  const downloadDocument = async (doc) => {
     try {
-      const response = await fetch(downloadUrl, {
+      if (!doc.downloadUrl) {
+        throw new Error('Download URL is missing');
+      }
+  
+      console.log(`Attempting to download from: ${doc.downloadUrl}`);
+      
+      const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
           'Accept': 'application/pdf,application/octet-stream',
         },
       });
@@ -96,16 +100,35 @@ const App = () => {
   
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
+      
+      // Create a hidden link element
       const link = document.createElement('a');
+      link.style.display = 'none'; // Hide the link
       link.href = url;
+      
+      // Ensure we have a valid filename
+      const filename = doc.filename 
+        ? doc.filename.replace(/[/\\?%*:|"<>]/g, '-')
+        : `document-${doc.id}.pdf`;
+        
       link.setAttribute('download', filename);
+      
+      // Add link to document, click it, and remove it all at once
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url); // Clean up
+      document.body.removeChild(link);
+      
+      // Clean up the URL object after a short delay to ensure the download starts
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log(`Successfully downloaded: ${filename}`);
+      // Add a small delay after each download
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error(`Error downloading ${filename}:`, error);
-      throw error; // Re-throw to be handled by caller
+      console.error(`Error downloading ${doc.filename || 'document'}:`, error);
+      throw error;
     }
   };
 
@@ -121,51 +144,47 @@ const App = () => {
   
         console.log(`Processing project: ${project.title}`);
   
-        try {
-          // Step 1: Get procedure links
-          const procedureLinks = await getProcedureLinks(project.url);
-          console.log(`Found ${procedureLinks.length} procedure links for project ${project.title}`);
-          
-          // Step 2: Get document links for each procedure
-          for (const procedureUrl of procedureLinks) {
-            try {
-              const documents = await getDocumentLinks(procedureUrl);
-              console.log(`Found ${documents.length} documents for procedure ${procedureUrl}`);
-              
-              // Step 3: Download each document
-              for (const doc of documents) {
-                try {
-                  await downloadDocument(doc.id, doc.filename);
-                  console.log(`Successfully downloaded ${doc.filename}`);
-                  // Add delay between downloads
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (error) {
-                  console.error(`Failed to download ${doc.filename}:`, error);
-                  // Continue with next document even if one fails
+        // Step 1: Get procedure links
+        const procedureLinks = await getProcedureLinks(project.url);
+        console.log(`Found ${procedureLinks.length} procedure links for project ${project.title}`);
+        
+        // Step 2: Get document links for each procedure
+        for (const procedureUrl of procedureLinks) {
+          try {
+            const documents = await getDocumentLinks(procedureUrl);
+            console.log(`Found ${documents.length} documents for procedure ${procedureUrl}`);
+            
+            // Step 3: Download each document
+            for (const doc of documents) {
+              try {
+                if (!doc.downloadUrl) {
+                  console.error('Document missing download URL:', doc);
+                  continue;
                 }
+                
+                await downloadDocument(doc);
+              } catch (error) {
+                console.error(`Failed to download document:`, error);
+                // Continue with next document even if one fails
               }
-            } catch (error) {
-              console.error(`Failed to process procedure ${procedureUrl}:`, error);
-              // Continue with next procedure even if one fails
             }
+          } catch (error) {
+            console.error(`Failed to process procedure ${procedureUrl}:`, error);
+            // Continue with next procedure even if one fails
           }
-        } catch (error) {
-          console.error(`Failed to process project ${project.title}:`, error);
-          // Continue with next project even if one fails
         }
       }
   
-      setDownloadingDocuments(false);
       console.log('All documents downloaded successfully.');
     } catch (error) {
       setError(`Error downloading documents: ${error.message}`);
-      setDownloadingDocuments(false);
       console.error('Error downloading documents:', error);
+    } finally {
+      setDownloadingDocuments(false);
     }
   };
 
 
-  
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">

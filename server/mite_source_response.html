@@ -1,0 +1,471 @@
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="it" lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>Progetti - VIA: Ricerca per tipologia di opera - Valutazioni e Autorizzazioni Ambientali - VAS - VIA - AIA</title>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="icon" href="https://va.mite.gov.it/Content/Images/favicon.gif?v=4" type="image/gif" />
+    <link rel="shortcut icon" href="https://va.mite.gov.it/Content/images/favicon.ico?v=4" />
+    <link href="https://va.mite.gov.it/Content/ui-custom/jquery-ui-1.10.4.custom.min.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="https://va.mite.gov.it/Content/jquery-treeview.css?v=4" rel="stylesheet" />
+
+    <script src="https://va.mite.gov.it/Scripts/jquery.js?v=4"></script>
+    <script src="https://va.mite.gov.it/Scripts/scripts.js?v=4"></script>
+
+    <!--[if IE 8]>
+        <link href="https://va.mite.gov.it/Content/ie8.css?v=4" rel="stylesheet" type="text/css" />
+    <![endif]-->
+    <!--[if IE 9]>
+        <link href="https://va.mite.gov.it/Content/ie9.css?v=4" rel="stylesheet" type="text/css" />
+    <![endif]-->
+    
+    <link href="https://va.mite.gov.it/Content/icone.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="https://va.mite.gov.it/Content/StyleFront.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="https://va.mite.gov.it/Content/tipTap.css?v=4" rel="stylesheet" type="text/css" />
+    <link href="https://va.mite.gov.it/Content/it.css?v=4" rel="stylesheet" type="text/css" />
+</head>
+<body class="it">
+
+    <!-- Modal -->    
+    
+
+<style>
+    .ui-widget-overlay {
+        background: #585858;
+        opacity: 0.5;
+        filter: Alpha(Opacity=30);
+    }
+    .ui-dialog {
+        width: 80% !important;
+        max-width: 814px;        
+    }
+    .info {
+        line-height: 150%;
+        font-size:medium;
+    }
+</style>
+
+<div class="modal fade" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" id="bs-info-modal-sm">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <p class="info">
+                    Il servizio è temporaneamente stato disabilitato in quanto è in corso una attività di analisi dei requisiti di sicurezza informatica.  
+                    Le funzionalità saranno ripristinate non appena possibile.
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+<!-- Modal -->
+
+
+
+    
+    <div class="container-secondo-livello">
+        <header class="content-header">
+            <div id="line">
+                <div id="logo">
+                    <a href="https://va.mite.gov.it/it-IT"><img src="https://va.mite.gov.it/Content/Images/logo_min_ambiente.png?v=4" class="img-responsive" alt="Logo MASE"></a>
+                </div>
+                <div id="titleSite">
+                    <h1>Valutazioni e Autorizzazioni Ambientali: <strong>VAS - VIA - AIA</strong></h1>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+
+
+
+
+<div class="location_flag">
+
+    <div class="fl lang">
+        <a href="/en-GB/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=10"
+           class="eng"
+           title="Set English language">
+            EN
+        </a>
+    </div>
+
+
+    
+</div>
+
+
+
+
+
+<nav id="cssmenu">
+    <div id="menu-button">Menu</div>
+    <ul>
+                <li class="">
+                            <a href="/it-IT">Home</a>
+                                    </li>
+                <li class="">
+                        <a href="javascript:void(0);"><span>Comunic-Azione</span></a>
+                                            <ul>
+                                    <li><a href="/it-IT/Comunicazione/Cittadino">Spazio per il cittadino</a></li>
+                                    <li><a href="/it-IT/Comunicazione/Proponente">Spazio per il proponente/gestore</a></li>
+                                    <li><a href="/it-IT/Comunicazione/UltimiProvvedimenti">Provvedimenti 2024</a></li>
+                                    <li><a href="/it-IT/Comunicazione/DirezioneInforma">La Direzione Informa</a></li>
+                                    <li><a href="/it-IT/Comunicazione/CommissioniTecniche">Attivit&#224; delle Commissioni Tecniche</a></li>
+                                    <li><a href="/it-IT/ps/Comunicazione/DomandeFrequenti">Domande frequenti</a></li>
+                        </ul>
+                </li>
+                <li class="">
+                        <a href="javascript:void(0);"><span>Procedure</span></a>
+                                            <ul>
+                                    <li><a href="/it-IT/Procedure/ProcedureInCorso">Procedure in corso</a></li>
+                                    <li><a href="/it-IT/Procedure/AvvisiAlPubblico/">Avvisi al pubblico</a></li>
+                                    <li><a href="/it-IT/ps/Procedure/InvioOsservazioni">Invio osservazioni</a></li>
+                                    <li><a href="/it-IT/Procedure/Provvedimenti">Provvedimenti</a></li>
+                                    <li><a href="/it-IT/Procedure/ConsultazioniTransfrontaliere/">Consultazioni transfrontaliere</a></li>
+                                    <li><a href="/it-IT/Procedure/ProcedureIntegrateECoordinate/">Procedure integrate e coordinate</a></li>
+                                    <li><a href="/it-IT/Procedure/Statistiche">Statistiche</a></li>
+                                    <li><a href="/it-IT/Procedure/Osservatori">Osservatori ambientali</a></li>
+                                    <li><a href="/it-IT/ps/Procedure/ILVA">Osservatorio Ilva di Taranto</a></li>
+                        </ul>
+                </li>
+                <li class="">
+                        <a href="javascript:void(0);"><span>Strumenti</span></a>
+                                            <ul>
+                                    <li><a href="/it-IT/ps/DatiEStrumenti/Modulistica">Specifiche tecniche e modulistica</a></li>
+                                    <li><a href="/it-IT/DatiEStrumenti/Normativa">Normativa</a></li>
+                                    <li><a href="/it-IT/DatiEStrumenti/StudiEIndaginiDiSettore">Linee guida e indirizzi operativi</a></li>
+                                    <li><a href="/it-IT/ps/DatiEStrumenti/ConclusioniBAT">Conclusioni  sulle BAT</a></li>
+                                    <li><a href="/it-IT/ps/DatiEStrumenti/BrefIED">Bref - IED</a></li>
+                        </ul>
+                </li>
+                <li class="active">
+                        <a href="javascript:void(0);"><span>Ricerca</span></a>
+                                            <ul>
+                                    <li><a href="/it-IT/Ricerca/Vas">Ricerca Piani e Programmi - VAS</a></li>
+                                    <li><a href="/it-IT/Ricerca/Via">Ricerca Progetti - VIA</a></li>
+                                    <li><a href="/it-IT/Ricerca/AIA">Ricerca Installazioni - AIA</a></li>
+                        </ul>
+                </li>
+                <li class="">
+                        <a href="javascript:void(0);"><span>Collegamenti</span></a>
+                                            <ul>
+                                    <li><a href="/it-IT/Collegamenti/Regioni">VAS e VIA Regioni</a></li>
+                                    <li><a href="/it-IT/Collegamenti/AIAregionali">AIA Regioni</a></li>
+                                    <li><a href="/it-IT/ps/Collegamenti/LinkInteresse">Link di interesse</a></li>
+                        </ul>
+                </li>
+                <li class="">
+                            <a href="/it-IT/ps/Home/Contatti">Contatti</a>
+                                    </li>
+    </ul>
+</nav>
+
+            <div style="clear:both"></div>
+        </header>
+        <div id="sito">
+            <div class="row content interna">
+                <div class="col-md-9">
+                    <div class="sezione">
+<!-- Breadcrums -->
+
+<div class="content-toolbar">
+    <span class="breadcrumbApertura">Sei in: </span>
+    <ol class="breadcrumb">
+            <li class="">
+                    <a title="Homepage" href="/it-IT">Home /</a>
+            </li>
+            <li class="">
+Ricerca /   
+            </li>
+            <li class="">
+                    <a title="Progetti - VIA: Ricerca" href="/it-IT/Ricerca/Via">Ricerca Progetti - VIA /</a>
+            </li>
+            <li class="active">
+Ricerca per tipologia di opera /
+            </li>
+    </ol>
+</div>
+<!-- fine Breadcrums -->
+
+                    </div>
+                    <div class="corpo">
+                        
+
+
+
+<div class="line_small_title">
+    <h2>Progetti - VIA: Ricerca per tipologia di opera</h2>
+</div>
+<div class="clear"></div>
+
+
+<div class="areaRicerca modelloEsteso">
+<form action="/it-IT/Ricerca/ViaTipologia" method="get"><input name="__RequestVerificationToken" type="hidden" value="luv1HU4SIxPa3cstkJKFtyaW1fYCDE9IFRIW5YlufMazx6CXalFhWHJRLtfpPIiDmzfZ_7LjX8xT-il8synE9pEXz0bEefzsTs1G2Fd6eXdGmE7agtof9L7pFty0hNHLJ5f17iyJ5DPwnstSGPY-OGmJPcd0rIHDb1_C6ECANu41" />        <div class="bgInput">
+            <div class="testo_ricerca ie9">
+                <label for="Testo">Tipologia di opera</label>
+                <select class="cerca" data-val="true" data-val-number="The field TipologiaID must be a number." id="TipologiaID" name="TipologiaID"><option value="">[tutte]</option>
+<option value="1">Opere stradali</option>
+<option value="2">Opere ferroviarie</option>
+<option value="3">Interporti</option>
+<option value="4">Opere idrauliche</option>
+<option value="5">Elettrodotti</option>
+<option value="6">Centrali</option>
+<option value="7">Ponte sullo stretto di Messina</option>
+<option value="8">Opere portuali e vie navigabili</option>
+<option value="9">Terminali marittimi</option>
+<option value="10">Impianti di rigassificazione</option>
+<option value="11">Impianti di stoccaggio</option>
+<option value="13">Raffinerie</option>
+<option value="14">Aeroporti</option>
+<option value="15">Metanodotti</option>
+<option value="16">Impianti di smaltimento e recupero rifiuti</option>
+<option value="23">Impianti di trattamento e stoccaggio temporaneo rifiuti radioattivi</option>
+<option value="24">Ricerca idrocarburi</option>
+<option value="25">Impianti chimici integrati</option>
+<option value="26">Coltivazione idrocarburi</option>
+<option value="30">Risanamento ambientale</option>
+<option value="31">Acciaierie</option>
+<option value="32">Impianti geotermici</option>
+<option value="33">Prospezione idrocarburi</option>
+<option value="34">Impianti eolici offshore</option>
+<option value="35">Impianti idroelettrici</option>
+<option value="36">Impianti eolici onshore</option>
+<option value="37">Attivit&#224; minerarie</option>
+<option value="38">Fotovoltaici</option>
+<option value="39">Realizzazione della nuova diga di Vado Ligure </option>
+<option value="40">Raffineria di Gela - Biojet e Potenziamento sezione Degumming dell&#39;impianto BTU</option>
+<option value="41">Agrivoltaici</option>
+</select>
+            </div> 
+            <div class="testo_ricerca ie9">
+                <label for="SettoreID">Testo da ricercare</label>
+                <input class="cerca" id="Testo" name="Testo" type="text" value="" />
+                <input type="image" class="btn-search" alt="Cerca" src="https://va.mite.gov.it/Content/Images/button_search.png?v=4" />
+            </div>
+        </div>
+</form></div>
+
+
+<h3 class="risultati">Progetti (6059)</h3>
+
+
+<div class="table-responsive">
+    <table class="table ElencoViaVasRicerca">
+            <tr>              
+                
+                <th>Progetto</th>
+                <th>Proponente</th>
+                <th>Ultima procedura</th>
+                <th><span class="hidden">Info</span></th>
+                <th><span class="hidden">Doc</span></th>
+            </tr>
+            <tr>
+                <td>Progetto di un impianto agrivoltaico, di potenza pari a 75,563 MW e delle relative opere di connessione alla RTN, da realizzarsi nel Comune di Lucera (FG).</td>
+                <td>VITTORIA PROGETTI S.R.L.</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11522" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11522/17427" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Parco eolico San Pancrazio Torrevecchia sito nel territorio comunale di San Pancrazio Salentino (BR) e relative opere di connessione della potenza complessiva di 34,5 MW</td>
+                <td>Tozzi Green S.p.A.</td>
+                <td>Verifica di Ottemperanza</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/1750" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/1750/17363" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Progetto di Fattibilit&#224; tecnico Economica NA 233: S.S. N. 212 &quot;Della Val Fortore&quot; Lavori di Completamento dallo sv. di S. Marco dei Cavoti a S. Bartolomeo in Galdo.2&#176; Lotto &quot;Var. all&#39;abitato di S. Bartolomeo in Galdo&quot;. BA 321: S.S. N. 369 Tratto dal confine reg. all&#39;innesto con la S.S. N.17</td>
+                <td> ANAS S.p.A.</td>
+                <td>Valutazione Impatto Ambientale</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11498" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11498/17388" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Progetto di un parco eolico off-shore flottante per la produzione di energia elettrica da fonte eolica nel Mar Ionio, denominato &quot;Messapia&quot;, costituito da 73 aerogeneratori di potenza unitaria di 18 MW, per una potenza complessiva d&#39;impianto pari a 1.314 MW, da realizzarsi al largo delle coste pugliesi, nelle acque comprese tra Tricase e l&#39;area marina a sud est di Capo Santa Maria di Leuca, in Provincia di Lecce, con opere di connessione on-shore alla RTN ricadenti nei comuni di Santa Cesarea Terme (LE), Otranto (LE), Minervino di Lecce (LE), Giuggianello (LE), Sanarica (LE), Muro Leccese (LE), Maglie (LE), Melpignano (LE), Corigliano d&#39;Otranto (LE), Soleto (LE), Sternatia (LE), Lequile (LE) e Copertino (LE) (cod. MYTERNA n. 202203695).</td>
+                <td>Messapia Floating Wind S.r.l.</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11533" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11533/17443" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Impianto agrivoltaico avanzato della potenza pari a 29.283,24 kWp, con impianto di accumulo da 12 MW, nei comuni di Foiano della Chiana (AR) e Sinalunga (SI)</td>
+                <td>NATURGY RINNOVABILI ITALIA S.R.L.</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11488" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11488/17365" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Progetto di un impianto eolico denominato &quot;Camelli&quot;, di potenza pari a 43,2 MW, e relative opere di connessione alla RTN, da realizzarsi nei Comuni di Simbario, Pizzoni, Vazzano, Filogaso e Maierato (VV)</td>
+                <td>SKI W A7 S.R.L.</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11517" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11517/17419" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Valutazione preliminare ai sensi dell&#39;art. 6, comma 9, del D.Lgs. 152/2006, relativa al progetto di ammodernamento complessivo di un impianto eolico esistente da 48 MW, sito nel Comune di Pietramontecorvino (FG), con smantellamento degli attuali 24 aerogeneratori e sostituzione in riduzione degli stessi, con l&#39;installazione di 11 nuovi aerogeneratori, per una potenza complessiva di 79,2 MW.</td>
+                <td>Voreas S.r.l.</td>
+                <td>Valutazione preliminare</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11528" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11528/17434" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Progetto di un impianto agrivoltaico denominato &quot;MONTONI VECCHI&quot; di potenza nominale pari a 41,81 MWp ed opere di connessione alla RTN, da realizzarsi nei Comuni i di Cammarata (AG), Vallelunga Pratameno (CL), Castronovo di Sicilia(PA).</td>
+                <td>DS ITALIA 29 S.R.L.</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11484" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11484/17349" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Progetto di un impianto fotovoltaico denominato &quot;BRINDISI SUD HV&quot; di potenza nominale pari a 41,06 MWp ed opere di connessione alla RTN, da realizzarsi nel Comune di Brindisi (BR) in localit&#224; Tuturano.</td>
+                <td>HF SOLAR 20 SOCIETA&#39; A RESPONSABILITA&#39; LIMITATA</td>
+                <td>Valutazione Impatto Ambientale (PNIEC-PNRR)</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11492" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11492/17372" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+            <tr>
+                <td>Valutazione preliminare, ai sensi dell&#39;art. 6, comma 9, del D.Lgs. 152/2006, relativa alla modifica dell&#39;impianto eolico denominato &quot;Borgo Mezzanone&quot;, positivamente valutato con delibera del Consiglio dei ministri del 16/09/2022, consistente nello spostamento degli aerogeneratori numerati WTG13 e WTG16 [riferimento VIP_4771].</td>
+                <td>Parco Eolico Borgo Mezzanone S.r.l.</td>
+                <td>Valutazione preliminare</td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Info/11491" class="icona-info-progetto" title="Info Progetto e procedure">info</a></td>
+                <td><a href="https://va.mite.gov.it/it-IT/Oggetti/Documentazione/11491/17371" class="icona-documentazione-tecnico-amm" title="Documentazione ">Documentazione Progetto</a></td>
+            </tr>
+        </table>
+    </div>
+
+
+<div class="area_sotto_tabella">
+    <div class="buttonBackground">
+        <a class="button esportaButton external" href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=10&amp;mode=export">Esporta</a>
+    </div>
+    <div class="paginatore">
+        <div class="paginatore"><ul class="pagination"><li class="etichettaRicerca">Pagina 10 di 606</li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=1">prima</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=9">&laquo;</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=1">1</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=2">2</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=3">3</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=4">4</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=5">5</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=6">6</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=7">7</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=8">8</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=9">9</a></li><li class="active"><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=10">10</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=11">&raquo;</a></li><li><a href="/it-IT/Ricerca/ViaTipologia?__RequestVerificationToken=U8VjWjpYx_FNuVTH6Ljn621pxuThOMQAWW83rBRPqistP2qGs9dpLQ1L1cqaIR09Cveqy_J71ETEZ8bggu6c4HHj8i-SybMj4QOXGcGbzxZ4jM8srYz3PqUsIkGR061G94hd1OdHGkGTn89a81av28gVQ5nYepuEnIioeV_anDc1&amp;x=30&amp;y=12&amp;pagina=606">ultima</a></li></ul></div>
+    </div>
+    <div class="visualizza_pagina"></div>
+</div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+<footer>
+    <div class="box_footer_full_width">
+        <div class="area_cinque_sez f-dr-jsb">
+            <div class="size_box">
+                <p><a href="https://va.mite.gov.it/it-IT" target="_blank" rel="noopener noreferrer">
+                        <img src="https://va.mite.gov.it/Content/Images/logo_min_ambiente.png?v=4" alt="Logo MASE" style="width:271px" />
+                    </a>
+                </p>
+                <p><a href="http://www.governo.it/" rel="noopener noreferrer" target="_blank">
+                        <img src="https://va.mite.gov.it/Content/Images/logo_gov_footer.png?v=4" alt="www.governo.it" />
+                    </a>
+                </p>
+            </div>
+
+
+<div class="size_box">                                <div class="lineTitleBox">
+                                    <h1><span>Comunic-Azione</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/Comunicazione/Cittadino">Spazio per il cittadino</a></li>
+                                            <li><a href="/it-IT/Comunicazione/Proponente">Spazio per il proponente/gestore</a></li>
+                                            <li><a href="/it-IT/Comunicazione/UltimiProvvedimenti">Provvedimenti 2024</a></li>
+                                            <li><a href="/it-IT/Comunicazione/DirezioneInforma">La Direzione Informa</a></li>
+                                            <li><a href="/it-IT/Comunicazione/CommissioniTecniche">Attivit&#224; delle Commissioni Tecniche</a></li>
+                                            <li><a href="/it-IT/ps/Comunicazione/DomandeFrequenti">Domande frequenti</a></li>
+                                </ul>
+</div><div class="size_box">                                <div class="lineTitleBox">
+                                    <h1><span>Procedure</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/Procedure/ProcedureInCorso">Procedure in corso</a></li>
+                                            <li><a href="/it-IT/Procedure/AvvisiAlPubblico/">Avvisi al pubblico</a></li>
+                                            <li><a href="/it-IT/ps/Procedure/InvioOsservazioni">Invio osservazioni</a></li>
+                                            <li><a href="/it-IT/Procedure/Provvedimenti">Provvedimenti</a></li>
+                                            <li><a href="/it-IT/Procedure/ConsultazioniTransfrontaliere/">Consultazioni transfrontaliere</a></li>
+                                            <li><a href="/it-IT/Procedure/ProcedureIntegrateECoordinate/">Procedure integrate e coordinate</a></li>
+                                            <li><a href="/it-IT/Procedure/Statistiche">Statistiche</a></li>
+                                            <li><a href="/it-IT/Procedure/Osservatori">Osservatori ambientali</a></li>
+                                            <li><a href="/it-IT/ps/Procedure/ILVA">Osservatorio Ilva di Taranto</a></li>
+                                </ul>
+</div><div class="size_box">                                <div class="lineTitleBox">
+                                    <h1><span>Strumenti</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/ps/DatiEStrumenti/Modulistica">Specifiche tecniche e modulistica</a></li>
+                                            <li><a href="/it-IT/DatiEStrumenti/Normativa">Normativa</a></li>
+                                            <li><a href="/it-IT/DatiEStrumenti/StudiEIndaginiDiSettore">Linee guida e indirizzi operativi</a></li>
+                                            <li><a href="/it-IT/ps/DatiEStrumenti/ConclusioniBAT">Conclusioni  sulle BAT</a></li>
+                                            <li><a href="/it-IT/ps/DatiEStrumenti/BrefIED">Bref - IED</a></li>
+                                </ul>
+                                <div class="lineTitleBox">
+                                    <h1><span>Ricerca</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/Ricerca/Vas">Ricerca Piani e Programmi - VAS</a></li>
+                                            <li><a href="/it-IT/Ricerca/Via">Ricerca Progetti - VIA</a></li>
+                                            <li><a href="/it-IT/Ricerca/AIA">Ricerca Installazioni - AIA</a></li>
+                                </ul>
+</div><div class="size_box">                                <div class="lineTitleBox">
+                                    <h1><span>Collegamenti</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/Collegamenti/Regioni">VAS e VIA Regioni</a></li>
+                                            <li><a href="/it-IT/Collegamenti/AIAregionali">AIA Regioni</a></li>
+                                            <li><a href="/it-IT/ps/Collegamenti/LinkInteresse">Link di interesse</a></li>
+                                </ul>
+                                <div class="lineTitleBox">
+                                    <h1><span>Utilit&#224;</span></h1>
+                                </div>
+                                <div class="clear"></div>
+                                <ul class="menuFooter">
+                                            <li><a href="/it-IT/Home/Mappa">Mappa del sito</a></li>
+                                            <li><a href="/it-IT/Home/Feed">FEED RSS</a></li>
+                                            <li><a href="/it-IT/ps/Home/Accessibilita">Accessibilit&#224;</a></li>
+                                            <li><a href="/it-IT/ps/Home/PrivacyPolicy">Informativa Cookie</a></li>
+                                            <li><a href="/it-IT/ps/Home/privacy-policy">Informativa protezione dati personali</a></li>
+                                </ul>
+</div>
+
+            <div class="size_box">
+                <div class="pad_Html_validator">
+                    <span><a href="https://validator.w3.org" rel="noopener noreferrer" target="_blank" title="CSS validatore"><img src="https://va.mite.gov.it/Content/Images/css_validator.png?v=4" width="29" height="41" alt="CSS validatore" /></a></span>
+                    <span><a href="https://validator.w3.org" rel="noopener noreferrer" target="_blank" title="HMTL5 validatore"><img src="https://va.mite.gov.it/Content/Images/html5_validator.png?v=4" width="29" height="41"  alt="HMTL5 validatore"/></a></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="btFooterSection">Copyright M.A.T.T.M 2017. Tutti i diritti riservati</div>
+</footer>
+
+
+
+    </div>
+
+    <script src="https://va.mite.gov.it/Scripts/jquery-ui-1.10.4.custom.min.js?v=4"></script>
+    <script src="https://va.mite.gov.it/Scripts/modernizr.min.js?v=4"></script>
+    
+    <script src="https://va.mite.gov.it/Scripts/jquery.cookie.js?v=4"></script>
+    <script src="https://va.mite.gov.it/Scripts/jquery.treeview.js?v=4"></script>
+    <script src="https://va.mite.gov.it/Scripts/jquery.tipTip.minified.js?v=4"></script>
+
+
+    
+
+
+</body>
+</html>
+
+
+
+
+
+

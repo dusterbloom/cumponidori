@@ -224,8 +224,8 @@ app.get('/api/documents', async (req, res) => {
           const documentId = downloadLink.split('/').pop();
           docLinks.push({
             id: documentId,
-            filename: nomeFile,
-            downloadUrl: downloadUrl
+            filename: nomeFile || `document-${documentId}.pdf`,
+            downloadUrl: new URL(downloadLink, BASE_URL).href // Make sure this is an absolute URL
           });
         }
       });
@@ -248,6 +248,45 @@ app.get('/api/documents', async (req, res) => {
     console.error('Server error:', error);
     res.status(500).json({ 
       error: 'Failed to fetch document links',
+      details: error.message 
+    });
+  }
+});
+
+
+
+// Add new endpoint for document downloads
+app.get('/api/download', async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'Document URL is required' });
+    }
+
+    console.log(`[INFO] Downloading document from: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'application/pdf,application/octet-stream',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Forward the content type header
+    res.setHeader('Content-Type', response.headers.get('content-type') || 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment');
+
+    // Pipe the response directly to the client
+    response.body.pipe(res);
+  } catch (error) {
+    console.error('Download error:', error);
+    res.status(500).json({ 
+      error: 'Failed to download document',
       details: error.message 
     });
   }
