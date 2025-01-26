@@ -88,11 +88,8 @@ const App = () => {
   
       console.log(`Attempting to download from: ${doc.downloadUrl}`);
       
-      const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`, {
-        headers: {
-          'Accept': 'application/pdf,application/octet-stream',
-        },
-      });
+      // Use our proxy endpoint instead of direct download
+      const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
   
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
@@ -100,39 +97,28 @@ const App = () => {
   
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
-      // Create a hidden link element
       const link = document.createElement('a');
-      link.style.display = 'none'; // Hide the link
+      link.style.display = 'none';
       link.href = url;
-      
-      // Ensure we have a valid filename
-      const filename = doc.filename 
-        ? doc.filename.replace(/[/\\?%*:|"<>]/g, '-')
-        : `document-${doc.id}.pdf`;
-        
-      link.setAttribute('download', filename);
-      
-      // Add link to document, click it, and remove it all at once
+      link.setAttribute('download', doc.filename || 'document.pdf');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Clean up the URL object after a short delay to ensure the download starts
+      // Clean up the URL object after a short delay
       setTimeout(() => {
         window.URL.revokeObjectURL(url);
       }, 100);
       
-      console.log(`Successfully downloaded: ${filename}`);
-      // Add a small delay after each download
+      console.log(`Successfully downloaded: ${doc.filename}`);
+      // Add a delay between downloads
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       console.error(`Error downloading ${doc.filename || 'document'}:`, error);
       throw error;
     }
   };
-
-
+  
   const handleDownloadDocuments = async () => {
     setDownloadingDocuments(true);
     setError(null);

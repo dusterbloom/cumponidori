@@ -256,6 +256,42 @@ app.get('/api/documents', async (req, res) => {
 
 
 // Add new endpoint for document downloads
+// app.get('/api/download', async (req, res) => {
+//   try {
+//     const { url } = req.query;
+    
+//     if (!url) {
+//       return res.status(400).json({ error: 'Document URL is required' });
+//     }
+
+//     console.log(`[INFO] Downloading document from: ${url}`);
+    
+//     const response = await fetch(url, {
+//       headers: {
+//         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+//         'Accept': 'application/pdf,application/octet-stream',
+//       },
+//     });
+
+//     if (!response.ok) {
+//       throw new Error(`HTTP error! status: ${response.status}`);
+//     }
+
+//     // Forward the content type header
+//     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/pdf');
+//     res.setHeader('Content-Disposition', 'attachment');
+
+//     // Pipe the response directly to the client
+//     response.body.pipe(res);
+//   } catch (error) {
+//     console.error('Download error:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to download document',
+//       details: error.message 
+//     });
+//   }
+// });
+
 app.get('/api/download', async (req, res) => {
   try {
     const { url } = req.query;
@@ -277,9 +313,9 @@ app.get('/api/download', async (req, res) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Forward the content type header
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment');
+    // Force download with Content-Disposition
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
 
     // Pipe the response directly to the client
     response.body.pipe(res);
