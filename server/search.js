@@ -1,5 +1,5 @@
-const fetch = require('node-fetch');
-const cheerio = require('cheerio');
+import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
 
 const BASE_URL = "https://va.mite.gov.it";
 const VALID_STATUSES = [
@@ -12,7 +12,7 @@ const VALID_STATUSES = [
   'Definizione contenuti SIA (PNIEC-PNRR)'
 ];
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   try {
     const { keyword = '', page = 1 } = event.queryStringParameters;
 
@@ -80,11 +80,17 @@ exports.handler = async function(event, context) {
       },
       body: JSON.stringify({ projects })
     };
-  } catch (error) {
+} catch (error) {
     console.error('Search error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ 
+        error: 'Failed to fetch data',
+        details: error.message 
+      })
     };
   }
 };
