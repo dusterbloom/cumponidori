@@ -276,6 +276,8 @@ const App = () => {
           onPageChange={handlePageChange}
           selectedProjects={selectedProjects}
           onSelectProject={handleSelectProject}
+          statusFilter={statusFilter}  // Add this prop
+          onStatusFilterChange={handleStatusFilterChange}  // Add this prop
         />
       )}
       
