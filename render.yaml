@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mite-scraper-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://cumponidori.netlify.app
+    cors:
+      allowOrigins:
+        - https://cumponidori.netlify.app
