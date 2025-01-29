@@ -11,16 +11,13 @@ const STATUS_OPTIONS = [
   'Definizione contenuti SIA (PNIEC-PNRR)'
 ];
 
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? process.env.REACT_APP_API_URL  // Will be your Render service URL
-  : 'http://localhost:3001';
-
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3005',
     timeout: 15000,
     headers: {
       'Content-Type': 'application/json',
-    }
+    },
+    withCredentials: true // Add this line
   });
 
 export const searchProjects = async (keyword, page = 1, status = 'all') => {

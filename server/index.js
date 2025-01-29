@@ -20,13 +20,16 @@ const VALID_STATUSES = [
 // Configure CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? 'https://cumponidori.netlify.app'
+    ? ['https://cumponidori.netlify.app']  // Array of allowed origins
     : 'http://localhost:5173',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
+// Add preflight OPTIONS handler
+app.options('*', cors());
 
 app.use(express.json());
 
