@@ -2,13 +2,17 @@ services:
   - type: web
     name: cumponidori
     env: node
+    rootDir: server 
     buildCommand: npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "10000"
       - key: CLIENT_URL
         value: https://cumponidori.netlify.app
-    cors:
-      allowOrigins:
-        - https://cumponidori.netlify.app
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://cumponidori.netlify.app
