@@ -12,13 +12,14 @@ const STATUS_OPTIONS = [
 ];
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3005',
-    timeout: 15000,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    withCredentials: true // Add this line
-  });
+  baseURL: import.meta.env.PROD 
+    ? 'https://cumponidori.onrender.com'  // Production URL
+    : 'http://localhost:3005',            // Development URL
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
 
 export const searchProjects = async (keyword, page = 1, status = 'all') => {
   if (!keyword?.trim()) {

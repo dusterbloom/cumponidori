@@ -20,7 +20,7 @@ const VALID_STATUSES = [
 // Configure CORS
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://cumponidori.netlify.app']  // Array of allowed origins
+    ? 'https://cumponidori.netlify.app'  // Single string instead of array
     : 'http://localhost:5173',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

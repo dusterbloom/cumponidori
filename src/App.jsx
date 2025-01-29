@@ -89,8 +89,13 @@ const App = () => {
       console.log(`Attempting to download from: ${doc.downloadUrl}`);
       
       // Use our proxy endpoint instead of direct download
-      const response = await fetch(`http://localhost:3001/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
-  
+      const apiUrl = process.env.NODE_ENV === 'production'
+      ? process.env.REACT_APP_API_URL
+      : 'http://localhost:3001';
+      
+    const response = await fetch(`${apiUrl}/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
+    
+    
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
