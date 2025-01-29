@@ -266,7 +266,6 @@ app.get('/api/documents', async (req, res) => {
 });
 
 
-
 app.get('/api/download', async (req, res) => {
   try {
     const { url } = req.query;
@@ -288,11 +287,11 @@ app.get('/api/download', async (req, res) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Force download with Content-Disposition
+    // Set appropriate headers
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="document.pdf"');
+    res.setHeader('Content-Disposition', `attachment; filename="document.pdf"`);
 
-    // Pipe the response directly to the client
+    // Stream the response
     response.body.pipe(res);
   } catch (error) {
     console.error('Download error:', error);
@@ -302,6 +301,7 @@ app.get('/api/download', async (req, res) => {
     });
   }
 });
+
 
 async function findTotalPages($) {
   const paginationLabel = $('.pagination .etichettaRicerca').text();

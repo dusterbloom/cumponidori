@@ -93,14 +93,16 @@ const App = () => {
       ? process.env.REACT_APP_API_URL
       : 'http://localhost:3001';
       
-    const response = await fetch(`${apiUrl}/api/download?url=${encodeURIComponent(doc.downloadUrl)}`);
-    
-    
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
+      // Use the API instance to make the request
+      const response = await api.get('/api/download', {
+        params: { url: doc.downloadUrl },
+        responseType: 'blob'  // Important for handling binary data
+      });
   
-      const blob = await response.blob();
+      // Create blob from response
+      const blob = new Blob([response.data], { 
+        type: response.headers['content-type'] || 'application/pdf' 
+      });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.style.display = 'none';
@@ -125,51 +127,81 @@ const App = () => {
   };
   
   const handleDownloadDocuments = async () => {
-    setDownloadingDocuments(true);
-    setError(null);
-  
     try {
+      // Let user select a directory using File System Access API
+      const dirHandle = await window.showDirectoryPicker();
+      
+      setDownloadingDocuments(true);
+      setError(null);
+  
+      // Create base folder structure similar to tzeracu.py
+      const baseFolder = await dirHandle.getDirectoryHandle('downloads', { create: true });
+      const searchFolder = await baseFolder.getDirectoryHandle(
+        currentKeyword.replace(/[^a-z0-9]/gi, '_'), 
+        { create: true }
+      );
+      const projectsFolder = await searchFolder.getDirectoryHandle('Progetti', { create: true });
+  
       for (const projectId of selectedProjects) {
         const project = results.find((p) => p.id === projectId);
         if (!project) continue;
   
+        // Create project folder with ID and description (sanitized)
+        const folderName = `${project.id}_${project.title.replace(/[^a-z0-9]/gi, '_').slice(0, 100)}`;
+        const projectFolder = await projectsFolder.getDirectoryHandle(folderName, { create: true });
+  
         console.log(`Processing project: ${project.title}`);
   
-        // Step 1: Get procedure links
-        const procedureLinks = await getProcedureLinks(project.url);
-        console.log(`Found ${procedureLinks.length} procedure links for project ${project.title}`);
-        
-        // Step 2: Get document links for each procedure
-        for (const procedureUrl of procedureLinks) {
-          try {
-            const documents = await getDocumentLinks(procedureUrl);
-            console.log(`Found ${documents.length} documents for procedure ${procedureUrl}`);
-            
-            // Step 3: Download each document
-            for (const doc of documents) {
-              try {
-                if (!doc.downloadUrl) {
-                  console.error('Document missing download URL:', doc);
-                  continue;
+        try {
+          const procedureLinks = await getProcedureLinks(project.url);
+          
+          for (const procedureUrl of procedureLinks) {
+            try {
+              const documents = await getDocumentLinks(procedureUrl);
+              
+              for (const doc of documents) {
+                try {
+                  if (!doc.downloadUrl) continue;
+                  
+                  // Download file
+                  const response = await api.get('/api/download', {
+                    params: { url: doc.downloadUrl },
+                    responseType: 'blob'
+                  });
+  
+                  // Save file with sanitized name
+                  const safeFilename = doc.filename.replace(/[^a-z0-9.]/gi, '_');
+                  const fileHandle = await projectFolder.getFileHandle(
+                    safeFilename,
+                    { create: true }
+                  );
+                  const writable = await fileHandle.createWritable();
+                  await writable.write(response.data);
+                  await writable.close();
+                  
+                  console.log(`Saved: ${safeFilename}`);
+                  await new Promise(resolve => setTimeout(resolve, 1000)); // Polite delay
+                } catch (error) {
+                  console.error(`Failed to save document:`, error);
                 }
-                
-                await downloadDocument(doc);
-              } catch (error) {
-                console.error(`Failed to download document:`, error);
-                // Continue with next document even if one fails
               }
+            } catch (error) {
+              console.error(`Failed to process procedure ${procedureUrl}:`, error);
             }
-          } catch (error) {
-            console.error(`Failed to process procedure ${procedureUrl}:`, error);
-            // Continue with next procedure even if one fails
           }
+        } catch (error) {
+          console.error(`Failed to get procedure links for project ${project.id}:`, error);
         }
       }
   
       console.log('All documents downloaded successfully.');
     } catch (error) {
-      setError(`Error downloading documents: ${error.message}`);
-      console.error('Error downloading documents:', error);
+      if (error.name === 'AbortError') {
+        setError('Directory selection was cancelled');
+      } else {
+        setError(`Error downloading documents: ${error.message}`);
+        console.error('Error:', error);
+      }
     } finally {
       setDownloadingDocuments(false);
     }
