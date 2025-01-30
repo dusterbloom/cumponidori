@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Container, Typography, Box, Alert, CircularProgress } from '@mui/material';
+import { Container, Typography, Box, Alert, CircularProgress, FormControlLabel, Checkbox, Button } from '@mui/material';
 import SearchForm from './components/SearchForm';
 import ResultsTable from './components/ResultsTable';
 import { searchProjects, getProcedureLinks, getDocumentLinks } from './api';
-import { FormControl, InputLabel, Select, MenuItem, FormControlLabel, Checkbox, Button } from '@mui/material';
+import axios from 'axios'; // We'll use a local axios instance for downloads too.
 
 const STATUS_OPTIONS = [
   'Valutazione preliminare',
@@ -16,26 +16,37 @@ const STATUS_OPTIONS = [
 ];
 
 const App = () => {
-  // Initialize all state
+  // State
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [currentKeyword, setCurrentKeyword] = useState('');
-  const [selectedProjects, setSelectedProjects] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // For selection + downloads
+  const [selectedProjects, setSelectedProjects] = useState([]);
   const [downloadingDocuments, setDownloadingDocuments] = useState(false);
 
+  // Single Axios instance for large/slow downloads: no short timeout
+  const downloadClient = axios.create({
+    baseURL: import.meta.env.PROD
+      ? 'https://cumponidori.onrender.com'
+      : 'http://localhost:3005',
+    // Remove or greatly increase the default timeout:
+    timeout: 120000, // 2 minutes, or remove it entirely
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-  const performSearch = async (searchKeyword, pageNum, status) => {
-    if (!searchKeyword?.trim()) return;
-    
+  // Perform search
+  const performSearch = async (keyword, pageNum, status) => {
+    if (!keyword?.trim()) return;
     setLoading(true);
     setError(null);
-    
+
     try {
-      const data = await searchProjects(searchKeyword.trim(), pageNum, status);
+      const data = await searchProjects(keyword.trim(), pageNum, status);
       setResults(data.projects || []);
       setTotalPages(data.totalPages || 1);
       setPage(pageNum);
@@ -67,220 +78,164 @@ const App = () => {
     }
   };
 
+  // "Select all" checkbox
   const handleSelectAll = (checked) => {
     setSelectedProjects(checked ? results.map(project => project.id) : []);
   };
 
+  // Individual project checkbox
   const handleSelectProject = (projectId, checked) => {
-    setSelectedProjects(prev => 
-      checked 
+    setSelectedProjects(prev =>
+      checked
         ? [...prev, projectId]
         : prev.filter(id => id !== projectId)
     );
   };
 
-
-  const downloadDocument = async (doc) => {
-    try {
-      if (!doc.downloadUrl) {
-        throw new Error('Download URL is missing');
-      }
-  
-      console.log(`Attempting to download from: ${doc.downloadUrl}`);
-      
-      // Use our proxy endpoint instead of direct download
-      const apiUrl = process.env.NODE_ENV === 'production'
-      ? process.env.REACT_APP_API_URL
-      : 'http://localhost:3001';
-      
-      // Use the API instance to make the request
-      const response = await api.get('/api/download', {
-        params: { url: doc.downloadUrl },
-        responseType: 'blob'  // Important for handling binary data
-      });
-  
-      // Create blob from response
-      const blob = new Blob([response.data], { 
-        type: response.headers['content-type'] || 'application/pdf' 
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.style.display = 'none';
-      link.href = url;
-      link.setAttribute('download', doc.filename || 'document.pdf');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up the URL object after a short delay
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 100);
-      
-      console.log(`Successfully downloaded: ${doc.filename}`);
-      // Add a delay between downloads
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error(`Error downloading ${doc.filename || 'document'}:`, error);
-      throw error;
-    }
-  };
-  
+  /**
+   * Download each selected project's documents by:
+   *   1) calling /api/procedure to get procedure URLs
+   *   2) calling /api/documents for each procedure URL
+   *   3) calling /api/download for each document
+   *   4) create a Blob + anchor to trigger the browser's "Save File" dialog
+   *
+   * We'll do a short delay between downloads to avoid spamming the server.
+   */
   const handleDownloadDocuments = async () => {
+    if (!selectedProjects.length) return;
+    setDownloadingDocuments(true);
+    setError(null);
+
     try {
-      // Let user select a directory using File System Access API
-      const dirHandle = await window.showDirectoryPicker();
-      
-      setDownloadingDocuments(true);
-      setError(null);
-  
-      // Create base folder structure similar to tzeracu.py
-      const baseFolder = await dirHandle.getDirectoryHandle('downloads', { create: true });
-      const searchFolder = await baseFolder.getDirectoryHandle(
-        currentKeyword.replace(/[^a-z0-9]/gi, '_'), 
-        { create: true }
-      );
-      const projectsFolder = await searchFolder.getDirectoryHandle('Progetti', { create: true });
-  
       for (const projectId of selectedProjects) {
-        const project = results.find((p) => p.id === projectId);
+        const project = results.find(p => p.id === projectId);
         if (!project) continue;
-  
-        // Create project folder with ID and description (sanitized)
-        const folderName = `${project.id}_${project.title.replace(/[^a-z0-9]/gi, '_').slice(0, 100)}`;
-        const projectFolder = await projectsFolder.getDirectoryHandle(folderName, { create: true });
-  
-        console.log(`Processing project: ${project.title}`);
-  
-        try {
-          const procedureLinks = await getProcedureLinks(project.url);
-          
-          for (const procedureUrl of procedureLinks) {
+
+        console.log(`Fetching procedure links for: ${project.title}`);
+        const procedureLinks = await getProcedureLinks(project.url);
+
+        for (const procedureUrl of procedureLinks) {
+          console.log(`Fetching document links for procedure: ${procedureUrl}`);
+          const documents = await getDocumentLinks(procedureUrl);
+
+          for (const doc of documents) {
+            if (!doc.downloadUrl) continue;
             try {
-              const documents = await getDocumentLinks(procedureUrl);
-              
-              for (const doc of documents) {
-                try {
-                  if (!doc.downloadUrl) continue;
-                  
-                  // Download file
-                  const response = await api.get('/api/download', {
-                    params: { url: doc.downloadUrl },
-                    responseType: 'blob'
-                  });
-  
-                  // Save file with sanitized name
-                  const safeFilename = doc.filename.replace(/[^a-z0-9.]/gi, '_');
-                  const fileHandle = await projectFolder.getFileHandle(
-                    safeFilename,
-                    { create: true }
-                  );
-                  const writable = await fileHandle.createWritable();
-                  await writable.write(response.data);
-                  await writable.close();
-                  
-                  console.log(`Saved: ${safeFilename}`);
-                  await new Promise(resolve => setTimeout(resolve, 1000)); // Polite delay
-                } catch (error) {
-                  console.error(`Failed to save document:`, error);
-                }
-              }
-            } catch (error) {
-              console.error(`Failed to process procedure ${procedureUrl}:`, error);
+              console.log(`Downloading document: ${doc.filename || 'document.pdf'}`);
+              // Use our API to get the file as a Blob
+              const resp = await downloadClient.get('/api/download', {
+                params: { url: doc.downloadUrl },
+                responseType: 'blob',
+              });
+
+              const blob = new Blob([resp.data], {
+                type: resp.headers['content-type'] || 'application/pdf'
+              });
+              const blobUrl = window.URL.createObjectURL(blob);
+
+              const link = document.createElement('a');
+              link.style.display = 'none';
+              link.href = blobUrl;
+              link.download = doc.filename || 'document.pdf';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+
+              // Revoke the URL after a short time
+              setTimeout(() => {
+                window.URL.revokeObjectURL(blobUrl);
+              }, 3000);
+
+              // Optional courtesy delay so the server isn't hammered
+              await new Promise(resolve => setTimeout(resolve, 1500));
+            } catch (e) {
+              console.error('Error downloading document:', e);
             }
           }
-        } catch (error) {
-          console.error(`Failed to get procedure links for project ${project.id}:`, error);
         }
       }
-  
-      console.log('All documents downloaded successfully.');
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        setError('Directory selection was cancelled');
-      } else {
-        setError(`Error downloading documents: ${error.message}`);
-        console.error('Error:', error);
-      }
+
+      console.log('All selected documents downloaded successfully.');
+    } catch (e) {
+      console.error('Error while downloading documents:', e);
+      setError(`Error while downloading: ${e.message}`);
     } finally {
       setDownloadingDocuments(false);
     }
   };
 
+  // Decide which projects to show based on statusFilter
+  const displayedResults =
+    statusFilter === 'all'
+      ? results
+      : results.filter((proj) => proj.status === statusFilter);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Project Search
       </Typography>
-      
+
       <SearchForm onSearch={handleSearch} />
-      
+
+      {/* Single Status Filter up here */}
       <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <FormControl sx={{ minWidth: 300 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={statusFilter}
-            label="Status"
-            onChange={handleStatusFilterChange}
-          >
-            <MenuItem value="all">All</MenuItem>
-            {STATUS_OPTIONS.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={selectedProjects.length === displayedResults.length && displayedResults.length > 0}
+              onChange={(e) => handleSelectAll(e.target.checked)}
+            />
+          }
+          label="Select All (Current Page)"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={handleStatusFilterChange}
+          style={{ height: '40px', fontSize: '16px', padding: '5px' }}
+        >
+          <option value="all">All Statuses</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <Button
+          variant="contained"
+          color="primary"
+          disabled={!selectedProjects.length || downloadingDocuments}
+          onClick={handleDownloadDocuments}
+        >
+          {downloadingDocuments ? 'Downloading...' : 'Download Documents'}
+        </Button>
       </Box>
-      
+
       {loading && (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
       )}
-      
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-      
-      {!loading && !error && results.length > 0 && (
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={selectedProjects.length === results.length}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-              />
-            }
-            label="Select All"
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={selectedProjects.length === 0 || downloadingDocuments}
-            onClick={handleDownloadDocuments}
-          >
-            {downloadingDocuments ? 'Downloading...' : 'Download Documents'}
-          </Button>
-        </Box>
-      )}
 
-      {!loading && !error && results.length > 0 && (
-        <ResultsTable 
-          results={results} 
+      {/* Results */}
+      {!loading && !error && displayedResults.length > 0 && (
+        <ResultsTable
+          results={displayedResults}
           page={page}
           totalPages={totalPages}
           onPageChange={handlePageChange}
           selectedProjects={selectedProjects}
           onSelectProject={handleSelectProject}
-          statusFilter={statusFilter}  // Add this prop
-          onStatusFilterChange={handleStatusFilterChange}  // Add this prop
         />
       )}
-      
+
+      {/* No results message */}
       {!loading && !error && results.length === 0 && currentKeyword && (
         <Alert severity="info">
           No results found. Try a different search term.
