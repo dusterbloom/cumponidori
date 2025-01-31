@@ -13,7 +13,7 @@ const SearchForm = ({ onSearch }) => {
     <Box component="form" onSubmit={handleSubmit} sx={{ mb: 3 }}>
       <TextField
         fullWidth
-        label="Search Keyword"
+        label="Parola chiave"
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         margin="normal"
