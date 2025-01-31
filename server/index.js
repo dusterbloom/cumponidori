@@ -177,14 +177,39 @@ app.get('/api/procedure', async (req, res) => {
   }
 });
 
+
+
+function findTotalPages($) {
+  try {
+    // Look for pagination info
+    const paginationText = $('.pagination .etichettaRicerca').text().trim();
+    const match = paginationText.match(/Pagina\s+(\d+)\s+di\s+(\d+)/i);
+    
+    if (match && match[2]) {
+      return parseInt(match[2], 10);
+    }
+    
+    // If no pagination found, check if there's at least one row in the table
+    const hasRows = $('table.Documentazione tr').length > 1;
+    return hasRows ? 1 : 0;
+  } catch (error) {
+    console.warn('Error finding total pages:', error);
+    return 1; // Default to 1 page if we can't determine the count
+  }
+}
+
+
 // -----------------------------------
 // /api/documents  -- UPDATED!!
 // -----------------------------------
 // Instead of fetching *all pages* in one request, we now fetch *one* page based on `req.query.page`.
 app.get('/api/documents', async (req, res) => {
+  // Move page declaration to the top of the function scope
+  let page;
+  
   try {
     const { procedureUrl } = req.query;
-    let { page } = req.query;
+    page = req.query.page; // Now page is accessible in the catch block
 
     // Validate required parameters
     if (!procedureUrl) {
@@ -254,8 +279,8 @@ app.get('/api/documents', async (req, res) => {
       }
     });
 
-    // Get total pages
-    const totalPages = findTotalPages($) || 1;
+    // Get total pages using our helper function
+    const totalPages = findTotalPages($);
 
     console.log(`[INFO] Found ${docs.length} doc(s) on page ${page}/${totalPages}`);
     
@@ -277,7 +302,6 @@ app.get('/api/documents', async (req, res) => {
     });
   }
 });
-
 // -----------------------------------
 // /api/download
 // -----------------------------------
