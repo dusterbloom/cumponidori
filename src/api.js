@@ -21,6 +21,10 @@ const api = axios.create({
   }
 });
 
+
+
+
+
 export const searchProjects = async (keyword, page = 1, status = 'all') => {
   if (!keyword?.trim()) {
     return { projects: [], totalPages: 1, currentPage: 1, total: 0 };
@@ -74,10 +78,13 @@ export const getProcedureLinks = async (detailUrl) => {
   }
 };
 
-export const getDocumentDownloadUrl = (documentId) => {
-  return `https://va.mite.gov.it/File/Documento/${documentId}`;
+export const getDocumentDownloadUrl = (documentUrl) => {
+  const baseUrl = import.meta.env.PROD 
+    ? 'https://cumponidori.onrender.com' 
+    : 'http://localhost:3005';
+    
+  return `${baseUrl}/api/download?url=${encodeURIComponent(documentUrl)}`;
 };
-
 
 export const getDocumentLinks = async (procedureUrl) => {
   try {

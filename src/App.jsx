@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Typography, Box, Alert, CircularProgress, FormControlLabel, Checkbox, Button } from '@mui/material';
 import SearchForm from './components/SearchForm';
 import ResultsTable from './components/ResultsTable';
-import { searchProjects, getProcedureLinks, getDocumentLinks } from './api';
+import { searchProjects, getProcedureLinks, getDocumentLinks, getDocumentDownloadUrl } from './api';
 import axios from 'axios'; // We'll use a local axios instance for downloads too.
 
 const STATUS_OPTIONS = [
@@ -108,37 +108,22 @@ const App = () => {
   
     try {
       for (const projectId of selectedProjects) {
-        // Use optional chaining and nullish coalescing for safer access
-        const project = results?.find(p => p?.id === projectId) ?? null;
+        const project = results?.find(p => p?.id === projectId);
         if (!project) {
           console.warn(`Project ${projectId} not found in results`);
-          continue;
-        }
-  
-        // Validate project has required properties
-        if (!project.url || !project.title) {
-          console.warn('Project missing required properties:', project);
           continue;
         }
   
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
   
-        // Validate procedureLinks is an array
-        if (!Array.isArray(procedureLinks)) {
-          console.error('Invalid procedure links:', procedureLinks);
-          continue; // Skip this project but continue with others
-        }
-  
         for (const procedureUrl of procedureLinks) {
-          if (!procedureUrl) continue; // Skip empty URLs
+          if (!procedureUrl) continue;
           
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
   
-          // documents will always be an array now (empty if error)
           for (const doc of documents) {
-            // Use optional chaining for safer property access
             const filename = doc?.filename || 'document.pdf';
             const downloadUrl = doc?.downloadUrl;
             
@@ -154,9 +139,9 @@ const App = () => {
               iframe.style.display = 'none';
               document.body.appendChild(iframe);
               
+              // Use the helper function here
               iframe.src = getDocumentDownloadUrl(downloadUrl);
               
-              // Remove iframe after download starts
               setTimeout(() => {
                 if (iframe?.parentNode) {
                   iframe.parentNode.removeChild(iframe);
