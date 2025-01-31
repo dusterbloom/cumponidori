@@ -99,34 +99,3 @@ export const getDocumentLinks = async (procedureUrl) => {
 };
 
 
-// Add a helper function to download documents
-const downloadDocument = async (doc) => {
-  try {
-    const response = await fetch(doc.downloadUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'application/pdf,application/octet-stream',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', doc.filename || `document-${doc.id}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-    
-    // Add a small delay after each download
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error) {
-    console.error(`Error downloading ${doc.filename}:`, error);
-    throw error;
-  }
-};

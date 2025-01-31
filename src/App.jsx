@@ -105,48 +105,38 @@ const App = () => {
     if (!selectedProjects.length) return;
     setDownloadingDocuments(true);
     setError(null);
-
+  
     try {
       for (const projectId of selectedProjects) {
         const project = results.find(p => p.id === projectId);
         if (!project) continue;
-
+  
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
-
+  
         for (const procedureUrl of procedureLinks) {
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
-
+  
           for (const doc of documents) {
             if (!doc.downloadUrl) continue;
             try {
               console.log(`Downloading document: ${doc.filename || 'document.pdf'}`);
-              // Use our API to get the file as a Blob
-              const resp = await downloadClient.get('/api/download', {
-                params: { url: doc.downloadUrl },
-                responseType: 'blob',
-              });
-
-              const blob = new Blob([resp.data], {
-                type: resp.headers['content-type'] || 'application/pdf'
-              });
-              const blobUrl = window.URL.createObjectURL(blob);
-
-              const link = document.createElement('a');
-              link.style.display = 'none';
-              link.href = blobUrl;
-              link.download = doc.filename || 'document.pdf';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-
-              // Revoke the URL after a short time
+              
+              // Create an invisible iframe for the download
+              const iframe = document.createElement('iframe');
+              iframe.style.display = 'none';
+              document.body.appendChild(iframe);
+              
+              // Set the iframe source to our download endpoint
+              iframe.src = getDocumentDownloadUrl(doc.downloadUrl);
+              
+              // Remove the iframe after a delay
               setTimeout(() => {
-                window.URL.revokeObjectURL(blobUrl);
-              }, 3000);
-
-              // Optional courtesy delay so the server isn't hammered
+                document.body.removeChild(iframe);
+              }, 5000);
+  
+              // Optional courtesy delay between downloads
               await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) {
               console.error('Error downloading document:', e);
@@ -154,7 +144,7 @@ const App = () => {
           }
         }
       }
-
+  
       console.log('All selected documents downloaded successfully.');
     } catch (e) {
       console.error('Error while downloading documents:', e);
