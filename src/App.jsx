@@ -102,58 +102,67 @@ const App = () => {
    * We'll do a short delay between downloads to avoid spamming the server.
    */
   const handleDownloadDocuments = async () => {
-    if (!selectedProjects.length) return;
+    if (!selectedProjects?.length) return;
     setDownloadingDocuments(true);
     setError(null);
   
     try {
       for (const projectId of selectedProjects) {
-        const project = results.find(p => p.id === projectId);
+        // Use optional chaining and nullish coalescing for safer access
+        const project = results?.find(p => p?.id === projectId) ?? null;
         if (!project) {
           console.warn(`Project ${projectId} not found in results`);
+          continue;
+        }
+  
+        // Validate project has required properties
+        if (!project.url || !project.title) {
+          console.warn('Project missing required properties:', project);
           continue;
         }
   
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
   
+        // Validate procedureLinks is an array
         if (!Array.isArray(procedureLinks)) {
           console.error('Invalid procedure links:', procedureLinks);
-          throw new Error('Failed to get valid procedure links');
+          continue; // Skip this project but continue with others
         }
   
         for (const procedureUrl of procedureLinks) {
+          if (!procedureUrl) continue; // Skip empty URLs
+          
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
   
-          if (!Array.isArray(documents)) {
-            console.error('Invalid documents array:', documents);
-            continue; // Skip this procedure but continue with others
-          }
-  
+          // documents will always be an array now (empty if error)
           for (const doc of documents) {
-            if (!doc?.downloadUrl) {
-              console.warn('Document missing download URL:', doc);
+            // Use optional chaining for safer property access
+            const filename = doc?.filename || 'document.pdf';
+            const downloadUrl = doc?.downloadUrl;
+            
+            if (!downloadUrl) {
+              console.warn(`Document missing download URL:`, doc);
               continue;
             }
   
             try {
-              console.log(`Downloading document: ${doc.filename || 'document.pdf'}`);
+              console.log(`Downloading document: ${filename}`);
               
-              // Create an invisible iframe for the download
               const iframe = document.createElement('iframe');
               iframe.style.display = 'none';
               document.body.appendChild(iframe);
               
-              // Set the iframe source to our download endpoint
-              iframe.src = getDocumentDownloadUrl(doc.downloadUrl);
+              iframe.src = getDocumentDownloadUrl(downloadUrl);
               
-              // Remove the iframe after a delay
+              // Remove iframe after download starts
               setTimeout(() => {
-                document.body.removeChild(iframe);
+                if (iframe?.parentNode) {
+                  iframe.parentNode.removeChild(iframe);
+                }
               }, 5000);
   
-              // Optional courtesy delay between downloads
               await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) {
               console.error('Error downloading document:', e);
@@ -162,7 +171,7 @@ const App = () => {
         }
       }
   
-      console.log('All selected documents downloaded successfully.');
+      console.log('Download process completed');
     } catch (e) {
       console.error('Error while downloading documents:', e);
       setError(`Error while downloading: ${e.message}`);

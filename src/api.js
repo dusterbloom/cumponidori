@@ -92,41 +92,43 @@ export const getDocumentLinks = async (procedureUrl) => {
         params: { procedureUrl, page }
       });
       
-      // Log the full response for debugging
-      console.log(`Page ${page} response:`, response.data);
+      // Destructure with defaults to handle potential undefined values
+      const { docs = [], currentPage = page, totalPages = 1 } = response?.data || {};
       
-      // Validate response structure
-      if (!response.data || typeof response.data !== 'object') {
-        console.error('Invalid response format:', response.data);
-        throw new Error('Invalid server response format');
-      }
-
-      const { docs, currentPage, totalPages } = response.data;
-
-      // Validate docs array
+      // Validate docs is an array
       if (!Array.isArray(docs)) {
         console.error('Server returned non-array docs:', docs);
-        throw new Error('Server returned invalid document data');
+        break; // Exit loop but don't throw - we might have some docs already
       }
 
-      // Add documents to our collection
-      allDocs = [...allDocs, ...docs];
+      // Filter out any docs without required properties
+      const validDocs = docs.filter(doc => {
+        if (!doc?.downloadUrl) {
+          console.warn('Skipping doc missing downloadUrl:', doc);
+          return false;
+        }
+        return true;
+      });
 
+      allDocs = [...allDocs, ...validDocs];
+      
       // Check if we should continue
       hasMorePages = currentPage < totalPages;
       page++;
 
-      // Safety check - break if we somehow go beyond totalPages
-      if (page > totalPages) {
-        console.warn('Reached beyond total pages, stopping');
-        break;
-      }
+      // Safety check
+      if (page > (totalPages || 1)) break;
+    }
+
+    // If we got no valid docs at all, that might be an error
+    if (!allDocs.length) {
+      console.warn('No valid documents found for:', procedureUrl);
     }
 
     return allDocs;
   } catch (error) {
     console.error('API Error in getDocumentLinks:', error);
-    throw new Error(`Failed to fetch document links: ${error.message}`);
+    return []; // Return empty array instead of throwing
   }
 };
 
