@@ -174,7 +174,7 @@ const App = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
-        Project Search
+        Cumponidori
       </Typography>
 
       <SearchForm onSearch={handleSearch} />
@@ -188,7 +188,7 @@ const App = () => {
               onChange={(e) => handleSelectAll(e.target.checked)}
             />
           }
-          label="Select All (Current Page)"
+          label="Seleziona tutto (Pagina corrente)"
         />
 
         <select
@@ -196,7 +196,7 @@ const App = () => {
           onChange={handleStatusFilterChange}
           style={{ height: '40px', fontSize: '16px', padding: '5px' }}
         >
-          <option value="all">All Statuses</option>
+          <option value="all">Tutti gli stati di avanzamento</option>
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -208,7 +208,7 @@ const App = () => {
           disabled={!selectedProjects.length || downloadingDocuments}
           onClick={handleDownloadDocuments}
         >
-          {downloadingDocuments ? 'Downloading...' : 'Download Documents'}
+          {downloadingDocuments ? 'Downloading...' : 'Scarica i documenti'}
         </Button>
       </Box>
 
@@ -239,7 +239,7 @@ const App = () => {
       {/* No results message */}
       {!loading && !error && results.length === 0 && currentKeyword && (
         <Alert severity="info">
-          No results found. Try a different search term.
+         Nudda. Intenda chircare mellus.
         </Alert>
       )}
     </Container>

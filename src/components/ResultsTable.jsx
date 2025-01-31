@@ -27,12 +27,12 @@ const ResultsTable = ({
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Select</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Proponent</TableCell>
+              <TableCell>Selezione</TableCell>
+              <TableCell>Titolo</TableCell>
+              <TableCell>Proponente</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Info</TableCell>
-              <TableCell>Documentation</TableCell>
+              <TableCell>Documentazione</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -50,7 +50,7 @@ const ResultsTable = ({
                 <TableCell>
                   {project.url ? (
                     <Link href={project.url} target="_blank" rel="noopener">
-                      View Info
+                      Link Info
                     </Link>
                   ) : (
                     'N/A'
@@ -59,7 +59,7 @@ const ResultsTable = ({
                 <TableCell>
                   {project.doc_url ? (
                     <Link href={project.doc_url} target="_blank" rel="noopener">
-                      View Docs
+                      Lista doc
                     </Link>
                   ) : (
                     'N/A'

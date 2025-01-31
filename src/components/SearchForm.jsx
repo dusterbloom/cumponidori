@@ -25,7 +25,7 @@ const SearchForm = ({ onSearch }) => {
         sx={{ mt: 2 }}
         fullWidth
       >
-        Search
+        Cerca
       </Button>
     </Box>
   );
