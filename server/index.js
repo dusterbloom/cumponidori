@@ -17,7 +17,6 @@ const VALID_STATUSES = [
   'Definizione contenuti SIA (PNIEC-PNRR)'
 ];
 
-import axios from 'axios';
 
 const app = express();
 const PORT = process.env.PORT || 3005;
