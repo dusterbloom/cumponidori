@@ -109,17 +109,34 @@ const App = () => {
     try {
       for (const projectId of selectedProjects) {
         const project = results.find(p => p.id === projectId);
-        if (!project) continue;
+        if (!project) {
+          console.warn(`Project ${projectId} not found in results`);
+          continue;
+        }
   
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
+  
+        if (!Array.isArray(procedureLinks)) {
+          console.error('Invalid procedure links:', procedureLinks);
+          throw new Error('Failed to get valid procedure links');
+        }
   
         for (const procedureUrl of procedureLinks) {
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
   
+          if (!Array.isArray(documents)) {
+            console.error('Invalid documents array:', documents);
+            continue; // Skip this procedure but continue with others
+          }
+  
           for (const doc of documents) {
-            if (!doc.downloadUrl) continue;
+            if (!doc?.downloadUrl) {
+              console.warn('Document missing download URL:', doc);
+              continue;
+            }
+  
             try {
               console.log(`Downloading document: ${doc.filename || 'document.pdf'}`);
               

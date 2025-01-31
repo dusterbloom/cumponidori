@@ -81,21 +81,52 @@ export const getDocumentDownloadUrl = (documentId) => {
 
 export const getDocumentLinks = async (procedureUrl) => {
   try {
-    const response = await api.get('/api/documents', {
-      params: {
-        procedureUrl
+    let allDocs = [];
+    let page = 1;
+    let hasMorePages = true;
+
+    while (hasMorePages) {
+      console.log(`Fetching documents page ${page} for ${procedureUrl}`);
+      
+      const response = await api.get('/api/documents', {
+        params: { procedureUrl, page }
+      });
+      
+      // Log the full response for debugging
+      console.log(`Page ${page} response:`, response.data);
+      
+      // Validate response structure
+      if (!response.data || typeof response.data !== 'object') {
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid server response format');
       }
-    });
-    
-    if (response.data.error) {
-      throw new Error(response.data.error);
+
+      const { docs, currentPage, totalPages } = response.data;
+
+      // Validate docs array
+      if (!Array.isArray(docs)) {
+        console.error('Server returned non-array docs:', docs);
+        throw new Error('Server returned invalid document data');
+      }
+
+      // Add documents to our collection
+      allDocs = [...allDocs, ...docs];
+
+      // Check if we should continue
+      hasMorePages = currentPage < totalPages;
+      page++;
+
+      // Safety check - break if we somehow go beyond totalPages
+      if (page > totalPages) {
+        console.warn('Reached beyond total pages, stopping');
+        break;
+      }
     }
-    
-    return response.data;
+
+    return allDocs;
   } catch (error) {
-    console.error('API Error:', error);
-    throw new Error(error.response?.data?.error || 'Failed to fetch document links. Please try again.');
+    console.error('API Error in getDocumentLinks:', error);
+    throw new Error(`Failed to fetch document links: ${error.message}`);
   }
 };
-
 

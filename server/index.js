@@ -186,15 +186,21 @@ app.get('/api/documents', async (req, res) => {
     const { procedureUrl } = req.query;
     let { page } = req.query;
 
+    // Validate required parameters
     if (!procedureUrl) {
-      return res.status(400).json({ error: 'Procedure URL is required' });
+      return res.status(400).json({ 
+        error: 'Procedure URL is required',
+        docs: [],
+        currentPage: 1,
+        totalPages: 1
+      });
     }
+
     // Default page=1 if not provided
-    if (!page) page = 1;
-    const pageNum = parseInt(page, 10);
+    page = parseInt(page || '1', 10);
 
     // Build the page-specific URL
-    const url = `${procedureUrl}${procedureUrl.includes('?') ? '&' : '?'}pagina=${pageNum}`;
+    const url = `${procedureUrl}${procedureUrl.includes('?') ? '&' : '?'}pagina=${page}`;
     console.log(`[INFO] Parsing procedure page => ${url}`);
 
     const response = await fetch(url, {
@@ -203,23 +209,34 @@ app.get('/api/documents', async (req, res) => {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
       }
     });
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.error(`[ERROR] HTTP ${response.status} fetching ${url}`);
+      return res.status(response.status).json({
+        error: `Failed to fetch page: HTTP ${response.status}`,
+        docs: [],
+        currentPage: page,
+        totalPages: 1
+      });
     }
 
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // Check if there's a "Documentazione" table at all
+    // Check if there's a "Documentazione" table
     const table = $('table.Documentazione');
     if (!table.length) {
-      console.log(`[WARN] No 'Documentazione' table found for page ${pageNum}.`);
-      // Return empty array, but totalPages=1 so the client won't keep going
-      return res.json({ docs: [], currentPage: pageNum, totalPages: 1 });
+      console.log(`[WARN] No 'Documentazione' table found for page ${page}`);
+      return res.json({ 
+        docs: [], 
+        currentPage: page, 
+        totalPages: 1,
+        warning: 'No documentation table found'
+      });
     }
 
-    // Collect doc links from *this single page*
-    const docLinks = [];
+    // Collect doc links
+    const docs = [];
     table.find('tr').slice(1).each((_, row) => {
       const cols = $(row).find('td');
       if (cols.length < 9) return;
@@ -229,7 +246,7 @@ app.get('/api/documents', async (req, res) => {
       if (downloadLink) {
         const fullDownloadUrl = new URL(downloadLink, BASE_URL).href;
         const documentId = downloadLink.split('/').pop();
-        docLinks.push({
+        docs.push({
           id: documentId,
           filename: nomeFile || `document-${documentId}.pdf`,
           downloadUrl: fullDownloadUrl,
@@ -237,35 +254,29 @@ app.get('/api/documents', async (req, res) => {
       }
     });
 
-    // Figure out how many total pages there are
-    const totalPages = findTotalPages($);
+    // Get total pages
+    const totalPages = findTotalPages($) || 1;
 
-    console.log(`[INFO] Found ${docLinks.length} doc(s) on page ${pageNum}/${totalPages}.`);
-    // Return JSON with these docs + page info
+    console.log(`[INFO] Found ${docs.length} doc(s) on page ${page}/${totalPages}`);
+    
     return res.json({
-      docs: docLinks,
-      currentPage: pageNum,
-      totalPages
+      docs,
+      currentPage: page,
+      totalPages,
+      warning: docs.length === 0 ? 'No documents found on this page' : undefined
     });
 
   } catch (error) {
-    console.error('Server error in /api/documents:', error);
+    console.error('[ERROR] Server error in /api/documents:', error);
     return res.status(500).json({
-      error: 'Failed to fetch document links for this page',
-      details: error.message
+      error: 'Failed to fetch document links',
+      details: error.message,
+      docs: [],
+      currentPage: parseInt(page || '1', 10),
+      totalPages: 1
     });
   }
 });
-
-// Helper function to parse "Pagina 1 di 8" from .pagination .etichettaRicerca
-function findTotalPages($) {
-  const paginationLabel = $('.pagination .etichettaRicerca').text();
-  const match = paginationLabel.match(/Pagina\s+(\d+)\s+di\s+(\d+)/);
-  if (match) {
-    return parseInt(match[2]);
-  }
-  return 1;
-}
 
 // -----------------------------------
 // /api/download
