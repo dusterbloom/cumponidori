@@ -3,9 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
+import axios from 'axios';
 
-const app = express();
-const PORT = 3001;
+
 
 const VALID_STATUSES = [
   'Valutazione preliminare',
@@ -17,20 +17,41 @@ const VALID_STATUSES = [
   'Definizione contenuti SIA (PNIEC-PNRR)'
 ];
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://cumponidori.netlify.app'
-    : 'http://localhost:5173',
+import axios from 'axios';
+
+const app = express();
+const PORT = process.env.PORT || 3005;
+
+// Update CORS configuration
+const corsOptions = {
+  origin: [
+    'https://cumponidori.netlify.app',
+    'http://localhost:5173',
+    'http://localhost:3005'
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200
-}));
+};
 
-// For preflight requests
-app.options('*', cors());
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
-app.use(express.json());
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Add error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    details: err.message,
+    docs: [],
+    currentPage: 1,
+    totalPages: 1
+  });
+});
 
 const BASE_URL = "https://va.mite.gov.it";
 
@@ -202,16 +223,13 @@ function findTotalPages($) {
 // -----------------------------------
 // /api/documents  -- UPDATED!!
 // -----------------------------------
-// Instead of fetching *all pages* in one request, we now fetch *one* page based on `req.query.page`.
 app.get('/api/documents', async (req, res) => {
-  // Move page declaration to the top of the function scope
   let page;
   
   try {
     const { procedureUrl } = req.query;
-    page = req.query.page; // Now page is accessible in the catch block
+    page = parseInt(req.query.page || '1', 10);
 
-    // Validate required parameters
     if (!procedureUrl) {
       return res.status(400).json({ 
         error: 'Procedure URL is required',
@@ -221,32 +239,21 @@ app.get('/api/documents', async (req, res) => {
       });
     }
 
-    // Default page=1 if not provided
-    page = parseInt(page || '1', 10);
-
-    // Build the page-specific URL
     const url = `${procedureUrl}${procedureUrl.includes('?') ? '&' : '?'}pagina=${page}`;
     console.log(`[INFO] Parsing procedure page => ${url}`);
 
-    const response = await fetch(url, {
+    const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+      },
+      timeout: 30000 // 30 second timeout
     });
 
-    if (!response.ok) {
-      console.error(`[ERROR] HTTP ${response.status} fetching ${url}`);
-      return res.status(response.status).json({
-        error: `Failed to fetch page: HTTP ${response.status}`,
-        docs: [],
-        currentPage: page,
-        totalPages: 1
-      });
-    }
-
-    const html = await response.text();
+    const html = response.data;
     const $ = cheerio.load(html);
+
 
     // Check if there's a "Documentazione" table
     const table = $('table.Documentazione');
@@ -293,12 +300,16 @@ app.get('/api/documents', async (req, res) => {
 
   } catch (error) {
     console.error('[ERROR] Server error in /api/documents:', error);
-    return res.status(500).json({
+    
+    // More detailed error response
+    return res.status(error.response?.status || 500).json({
       error: 'Failed to fetch document links',
       details: error.message,
       docs: [],
-      currentPage: parseInt(page || '1', 10),
-      totalPages: 1
+      currentPage: page || 1,
+      totalPages: 1,
+      statusCode: error.response?.status,
+      statusText: error.response?.statusText
     });
   }
 });
