@@ -67,11 +67,10 @@ const App = () => {
   const handleStatusFilterChange = (event) => {
     const newStatus = event.target.value;
     setStatusFilter(newStatus);
-    if (currentKeyword) {
-      performSearch(currentKeyword, 1, newStatus);
-    }
+    performSearch(currentKeyword, 1, newStatus); // Reset to page 1
   };
 
+  
   const handlePageChange = (newPage) => {
     if (currentKeyword) {
       performSearch(currentKeyword, newPage, statusFilter);
@@ -165,11 +164,8 @@ const App = () => {
     }
   };
 
-  // Decide which projects to show based on statusFilter
-  const displayedResults =
-    statusFilter === 'all'
-      ? results
-      : results.filter((proj) => proj.status === statusFilter);
+  const displayedResults = results;
+
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

@@ -77,6 +77,10 @@ app.get('/api/search', async (req, res) => {
       pagina: page
     });
 
+    if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
+      params.append('status', status); // Use the correct parameter name here
+    }
+
     const url = `${BASE_URL}${searchEndpoint}?${params}`;
     console.log('Fetching URL:', url);
 
@@ -108,19 +112,19 @@ app.get('/api/search', async (req, res) => {
           }
         }
         // Only add if the status is in the known list
-        if (VALID_STATUSES.includes(projectStatus)) {
-          const infoLink = $(cells[3]).find('a').attr('href');
-          const docLink = $(cells[4]).find('a').attr('href');
-          const project = {
-            title: $(cells[0]).text().trim(),
-            proponent: $(cells[1]).text().trim(),
-            status: projectStatus,
-            url: infoLink ? new URL(infoLink, BASE_URL).href : '',
-            doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
-            id: infoLink ? infoLink.split('/').pop() : `project-${i}`
-          };
-          projects.push(project);
-        }
+        
+        const infoLink = $(cells[3]).find('a').attr('href');
+        const docLink = $(cells[4]).find('a').attr('href');
+        const project = {
+          title: $(cells[0]).text().trim(),
+          proponent: $(cells[1]).text().trim(),
+          status: projectStatus,
+          url: infoLink ? new URL(infoLink, BASE_URL).href : '',
+          doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
+          id: infoLink ? infoLink.split('/').pop() : `project-${i}`
+        };
+        projects.push(project);
+        
       }
     });
 
