@@ -225,6 +225,12 @@ const App = () => {
         >
           {downloadingDocuments ? "Downloading..." : "Scarica i documenti"}
         </Button>
+        <Button
+          variant="contained"
+          onClick={() => setShowCSVExplorer((prev) => !prev)}
+        >
+          {showCSVExplorer ? "Hide CSV Explorer" : "Show CSV Explorer"}
+        </Button>
       </Box>
 
       {loading && (
@@ -256,15 +262,10 @@ const App = () => {
         <Alert severity="info">Nudda. Intenda chircare mellus.</Alert>
       )}
 
-      {/* Toggle Button for CSV Explorer */}
+      {/* Toggle Button for CSV Explorer
       <Box sx={{ mt: 4, textAlign: "center" }}>
-        <Button
-          variant="contained"
-          onClick={() => setShowCSVExplorer((prev) => !prev)}
-        >
-          {showCSVExplorer ? "Hide CSV Explorer" : "Show CSV Explorer"}
-        </Button>
-      </Box>
+  
+      </Box> */}
 
       {/* Conditionally render the CSV Explorer */}
       {showCSVExplorer && (
