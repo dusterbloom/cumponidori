@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Typography, Box, Alert, CircularProgress, FormControlLabel, Checkbox, Button } from '@mui/material';
 import SearchForm from './components/SearchForm';
 import ResultsTable from './components/ResultsTable';
+import CSVExplorer from './components/CSVExplorer';
 import { searchProjects, getProcedureLinks, getDocumentLinks, getDocumentDownloadUrl } from './api';
 import axios from 'axios'; // We'll use a local axios instance for downloads too.
 
@@ -219,6 +220,13 @@ const App = () => {
           {error}
         </Alert>
       )}
+
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          CSV Explorer
+        </Typography>
+        <CSVExplorer />
+      </Box>
 
       {/* Results */}
       {!loading && !error && displayedResults.length > 0 && (
