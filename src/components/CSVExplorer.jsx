@@ -78,14 +78,14 @@ const CSVExplorer = () => {
     return csvData.filter((row) => {
       const matchPdf =
         filters.pdfFilename.trim() === '' ||
-        (row['PDF filename'] &&
-          row['PDF filename']
+        (row['PDF'] &&
+          row['PDF']
             .toLowerCase()
             .includes(filters.pdfFilename.toLowerCase()));
       const matchPage =
         filters.pageNumber.trim() === '' ||
-        (row['Page number'] &&
-          row['Page number'].toString().includes(filters.pageNumber));
+        (row['N. pagina'] &&
+          row['N. pagina'].toString().includes(filters.pageNumber));
       const matchText =
         filters.text.trim() === '' ||
         Object.values(row).some((val) =>
@@ -180,7 +180,7 @@ const CSVExplorer = () => {
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h5" sx={{ color: blue[700], mb: 2 }}>
-        CSV Explorer
+        Esplora CSV 
       </Typography>
 
       {/* CSV Upload */}
@@ -194,7 +194,7 @@ const CSVExplorer = () => {
         />
         <label htmlFor="csv-upload">
           <Button variant="contained" component="span" color="primary">
-            Upload CSV
+            Carica CSV
           </Button>
         </label>
       </Box>
@@ -219,7 +219,7 @@ const CSVExplorer = () => {
             }}
           >
             <TextField
-              label="Filter by PDF filename"
+              label="Filtra per PDF"
               name="pdfFilename"
               value={filters.pdfFilename}
               onChange={handleFilterChange}
@@ -227,7 +227,7 @@ const CSVExplorer = () => {
               size="small"
             />
             <TextField
-              label="Filter by Page number"
+              label="Filtra per numero pagina"
               name="pageNumber"
               value={filters.pageNumber}
               onChange={handleFilterChange}
@@ -235,7 +235,7 @@ const CSVExplorer = () => {
               size="small"
             />
             <TextField
-              label="Text search"
+              label="Ricerca testuale"
               name="text"
               value={filters.text}
               onChange={handleFilterChange}
@@ -288,8 +288,8 @@ const CSVExplorer = () => {
           {/* Status Bar */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2">
-              Total Rows: {csvData.length} | Filtered Rows: {filteredData.length} |{' '}
-              Selected Rows: {selectedRows.length}
+              Totale Righe: {csvData.length} | Righe filtrate: {filteredData.length} |{' '}
+              Righe selezionate: {selectedRows.length}
             </Typography>
           </Box>
 
@@ -299,7 +299,7 @@ const CSVExplorer = () => {
             color="secondary"
             onClick={() => setExportDialogOpen(true)}
           >
-            Export CSV
+            Esporta CSV
           </Button>
 
           {/* Export Dialog */}
@@ -307,7 +307,7 @@ const CSVExplorer = () => {
             open={exportDialogOpen}
             onClose={() => setExportDialogOpen(false)}
           >
-            <DialogTitle>Export CSV</DialogTitle>
+            <DialogTitle>Esporta CSV</DialogTitle>
             <DialogContent>
               <TextField
                 autoFocus
@@ -319,14 +319,14 @@ const CSVExplorer = () => {
                 onChange={(e) => setExportFilename(e.target.value)}
               />
               <Typography variant="body2" sx={{ mt: 1 }}>
-                Exporting {selectedRows.length > 0 ? 'selected' : 'all filtered'} rows
-                with visible columns.
+                Esporta {selectedRows.length > 0 ? 'selected' : 'all filtered'} righe
+                con colonne visibili.
               </Typography>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => setExportDialogOpen(false)}>Annulla</Button>
               <Button onClick={handleExport} variant="contained" color="primary">
-                Export
+                Esporta
               </Button>
             </DialogActions>
           </Dialog>
