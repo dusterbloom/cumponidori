@@ -253,7 +253,7 @@ app.get('/api/search', async (req, res) => {
     // -----------------------------------
     // Step 3. Re‑paginate the filtered projects.
     // -----------------------------------
-    const pageSize = 10; // Set your desired page size
+    const pageSize = 20; // Set your desired page size
     const totalFiltered = allProjects.length;
     const totalPages = Math.ceil(totalFiltered / pageSize);
     const startIndex = (requestedPage - 1) * pageSize;
