@@ -229,7 +229,7 @@ const App = () => {
           variant="contained"
           onClick={() => setShowCSVExplorer((prev) => !prev)}
         >
-          {showCSVExplorer ? "Hide CSV Explorer" : "Show CSV Explorer"}
+          {showCSVExplorer ? "Nascondi EsploraCSV" : "Mostra EsploraCSV"}
         </Button>
       </Box>
 
