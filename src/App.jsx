@@ -1,19 +1,33 @@
-import React, { useState } from 'react';
-import { Container, Typography, Box, Alert, CircularProgress, FormControlLabel, Checkbox, Button } from '@mui/material';
-import SearchForm from './components/SearchForm';
-import ResultsTable from './components/ResultsTable';
-import CSVExplorer from './components/CSVExplorer';
-import { searchProjects, getProcedureLinks, getDocumentLinks, getDocumentDownloadUrl } from './api';
-import axios from 'axios'; // We'll use a local axios instance for downloads too.
+import React, { useState } from "react";
+import {
+  Container,
+  Typography,
+  Box,
+  Alert,
+  CircularProgress,
+  FormControlLabel,
+  Checkbox,
+  Button,
+} from "@mui/material";
+import SearchForm from "./components/SearchForm";
+import ResultsTable from "./components/ResultsTable";
+import CSVExplorer from "./components/CSVExplorer";
+import {
+  searchProjects,
+  getProcedureLinks,
+  getDocumentLinks,
+  getDocumentDownloadUrl,
+} from "./api";
+import axios from "axios"; // We'll use a local axios instance for downloads too.
 
 const STATUS_OPTIONS = [
-  'Valutazione preliminare',
-  'Verifica di Ottemperanza',
-  'Valutazione Impatto Ambientale',
-  'Valutazione Impatto Ambientale (PNIEC-PNRR)',
-  'Verifica di Assoggettabilità a VIA',
-  'Provvedimento Unico in materia Ambientale (PNIEC-PNRR)',
-  'Definizione contenuti SIA (PNIEC-PNRR)'
+  "Valutazione preliminare",
+  "Verifica di Ottemperanza",
+  "Valutazione Impatto Ambientale",
+  "Valutazione Impatto Ambientale (PNIEC-PNRR)",
+  "Verifica di Assoggettabilità a VIA",
+  "Provvedimento Unico in materia Ambientale (PNIEC-PNRR)",
+  "Definizione contenuti SIA (PNIEC-PNRR)",
 ];
 
 const App = () => {
@@ -23,21 +37,24 @@ const App = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [currentKeyword, setCurrentKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentKeyword, setCurrentKeyword] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // For selection + downloads
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [downloadingDocuments, setDownloadingDocuments] = useState(false);
 
+  // CSV EXPLORER
+  const [showCSVExplorer, setShowCSVExplorer] = useState(false);
+
   // Single Axios instance for large/slow downloads: no short timeout
   const downloadClient = axios.create({
     baseURL: import.meta.env.PROD
-      ? 'https://cumponidori.onrender.com'
-      : 'http://localhost:3005',
+      ? "https://cumponidori.onrender.com"
+      : "http://localhost:3005",
     // Remove or greatly increase the default timeout:
     timeout: 120000, // 2 minutes, or remove it entirely
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 
   // Perform search
@@ -71,7 +88,6 @@ const App = () => {
     performSearch(currentKeyword, 1, newStatus); // Reset to page 1
   };
 
-  
   const handlePageChange = (newPage) => {
     if (currentKeyword) {
       performSearch(currentKeyword, newPage, statusFilter);
@@ -80,15 +96,13 @@ const App = () => {
 
   // "Select all" checkbox
   const handleSelectAll = (checked) => {
-    setSelectedProjects(checked ? results.map(project => project.id) : []);
+    setSelectedProjects(checked ? results.map((project) => project.id) : []);
   };
 
   // Individual project checkbox
   const handleSelectProject = (projectId, checked) => {
-    setSelectedProjects(prev =>
-      checked
-        ? [...prev, projectId]
-        : prev.filter(id => id !== projectId)
+    setSelectedProjects((prev) =>
+      checked ? [...prev, projectId] : prev.filter((id) => id !== projectId)
     );
   };
 
@@ -105,60 +119,60 @@ const App = () => {
     if (!selectedProjects?.length) return;
     setDownloadingDocuments(true);
     setError(null);
-  
+
     try {
       for (const projectId of selectedProjects) {
-        const project = results?.find(p => p?.id === projectId);
+        const project = results?.find((p) => p?.id === projectId);
         if (!project) {
           console.warn(`Project ${projectId} not found in results`);
           continue;
         }
-  
+
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
-  
+
         for (const procedureUrl of procedureLinks) {
           if (!procedureUrl) continue;
-          
+
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
-  
+
           for (const doc of documents) {
-            const filename = doc?.filename || 'document.pdf';
+            const filename = doc?.filename || "document.pdf";
             const downloadUrl = doc?.downloadUrl;
-            
+
             if (!downloadUrl) {
               console.warn(`Document missing download URL:`, doc);
               continue;
             }
-  
+
             try {
               console.log(`Downloading document: ${filename}`);
-              
-              const iframe = document.createElement('iframe');
-              iframe.style.display = 'none';
+
+              const iframe = document.createElement("iframe");
+              iframe.style.display = "none";
               document.body.appendChild(iframe);
-              
+
               // Use the helper function here
               iframe.src = getDocumentDownloadUrl(downloadUrl);
-              
+
               setTimeout(() => {
                 if (iframe?.parentNode) {
                   iframe.parentNode.removeChild(iframe);
                 }
               }, 5000);
-  
-              await new Promise(resolve => setTimeout(resolve, 1500));
+
+              await new Promise((resolve) => setTimeout(resolve, 1500));
             } catch (e) {
-              console.error('Error downloading document:', e);
+              console.error("Error downloading document:", e);
             }
           }
         }
       }
-  
-      console.log('Download process completed');
+
+      console.log("Download process completed");
     } catch (e) {
-      console.error('Error while downloading documents:', e);
+      console.error("Error while downloading documents:", e);
       setError(`Error while downloading: ${e.message}`);
     } finally {
       setDownloadingDocuments(false);
@@ -166,7 +180,6 @@ const App = () => {
   };
 
   const displayedResults = results;
-
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -177,11 +190,14 @@ const App = () => {
       <SearchForm onSearch={handleSearch} />
 
       {/* Single Status Filter up here */}
-      <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
         <FormControlLabel
           control={
             <Checkbox
-              checked={selectedProjects.length === displayedResults.length && displayedResults.length > 0}
+              checked={
+                selectedProjects.length === displayedResults.length &&
+                displayedResults.length > 0
+              }
               onChange={(e) => handleSelectAll(e.target.checked)}
             />
           }
@@ -191,11 +207,13 @@ const App = () => {
         <select
           value={statusFilter}
           onChange={handleStatusFilterChange}
-          style={{ height: '40px', fontSize: '16px', padding: '5px' }}
+          style={{ height: "40px", fontSize: "16px", padding: "5px" }}
         >
           <option value="all">Tutti gli stati di avanzamento</option>
           {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
 
@@ -205,7 +223,7 @@ const App = () => {
           disabled={!selectedProjects.length || downloadingDocuments}
           onClick={handleDownloadDocuments}
         >
-          {downloadingDocuments ? 'Downloading...' : 'Scarica i documenti'}
+          {downloadingDocuments ? "Downloading..." : "Scarica i documenti"}
         </Button>
       </Box>
 
@@ -221,13 +239,6 @@ const App = () => {
         </Alert>
       )}
 
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          CSV Explorer
-        </Typography>
-        <CSVExplorer />
-      </Box>
-
       {/* Results */}
       {!loading && !error && displayedResults.length > 0 && (
         <ResultsTable
@@ -242,9 +253,24 @@ const App = () => {
 
       {/* No results message */}
       {!loading && !error && results.length === 0 && currentKeyword && (
-        <Alert severity="info">
-         Nudda. Intenda chircare mellus.
-        </Alert>
+        <Alert severity="info">Nudda. Intenda chircare mellus.</Alert>
+      )}
+
+      {/* Toggle Button for CSV Explorer */}
+      <Box sx={{ mt: 4, textAlign: "center" }}>
+        <Button
+          variant="contained"
+          onClick={() => setShowCSVExplorer((prev) => !prev)}
+        >
+          {showCSVExplorer ? "Hide CSV Explorer" : "Show CSV Explorer"}
+        </Button>
+      </Box>
+
+      {/* Conditionally render the CSV Explorer */}
+      {showCSVExplorer && (
+        <Box sx={{ mt: 4 }}>
+          <CSVExplorer />
+        </Box>
       )}
     </Container>
   );
