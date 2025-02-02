@@ -62,9 +62,104 @@ app.get('/', (req, res) => {
 // -----------------------------------
 // /api/search
 // -----------------------------------
+app.get('/api/search', async (req, res) => {
+  try {
+    const { keyword = '', page = 1, status } = req.query;
+
+    if (!keyword.trim()) {
+      return res.status(400).json({ error: 'Keyword is required' });
+    }
+
+    const searchEndpoint = "/it-IT/Ricerca/ViaLibera";
+    const params = new URLSearchParams({
+      Testo: keyword,
+      t: 'o',
+      pagina: page,
+      x: '26',  // Add these parameters as seen in the working URL
+      y: '11',
+      __RequestVerificationToken: '' // This might be needed but can be empty
+
+    });
+
+    if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
+      params.append('status', status);
+    }
+
+    const url = `${BASE_URL}${searchEndpoint}?${params}`;
+    console.log('Fetching URL:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cache-Control': 'no-cache',  // Add cache control headers
+        'Pragma': 'no-cache'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    let projects = [];
+    // Update selector to match the exact table structure
+    $('.ElencoViaVasRicerca tr').each((i, row) => {
+      // Skip header row
+      if (i === 0) return;
+
+      const cells = $(row).find('td');
+      if (cells.length >= 5) {
+        const projectStatus = $(cells[2]).text().trim();
+        const infoLink = $(cells[3]).find('a').attr('href');
+        const docLink = $(cells[4]).find('a').attr('href');
+
+        // Only add if we have valid links
+        if (infoLink) {
+          const project = {
+            title: $(cells[0]).text().trim(),
+            proponent: $(cells[1]).text().trim(),
+            status: projectStatus,
+            url: infoLink ? new URL(infoLink, BASE_URL).href : '',
+            doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
+            id: infoLink ? infoLink.split('/').pop() : `project-${i}`
+          };
+          projects.push(project);
+        }
+      }
+    });
+
+    // Update pagination parsing
+    let totalPages = 1;
+    const paginationText = $('.pagination .etichettaRicerca').text().trim();
+    const match = paginationText.match(/Pagina\s+(\d+)\s+di\s+(\d+)/i);
+    if (match && match[2]) {
+      totalPages = parseInt(match[2], 10);
+    }
+
+    res.json({
+      projects,
+      totalPages,
+      currentPage: parseInt(page),
+      total: projects.length,
+      validStatuses: VALID_STATUSES
+    });
+
+  } catch (error) {
+    console.error('Server error in /api/search:', error);
+    res.status(500).json({
+      error: 'Failed to fetch data',
+      details: error.message
+    });
+  }})
 // app.get('/api/search', async (req, res) => {
 //   try {
-//     const { keyword = '', page = 1, status } = req.query;
+//     const { keyword = '', status } = req.query;
+//     // Use the page parameter only for the final (re‑paginated) results.
+//     const requestedPage = parseInt(req.query.page || '1', 10);
 
 //     if (!keyword.trim()) {
 //       return res.status(400).json({ error: 'Keyword is required' });
@@ -72,75 +167,108 @@ app.get('/', (req, res) => {
 
 //     const searchEndpoint = "/it-IT/Ricerca/ViaLibera";
 //     const params = new URLSearchParams({
-//       Testo: keyword,
-//       t: 'o',
-//       pagina: page
+//       Testo: keyword.trim(),
+//       t: 'o'
 //     });
 
-//     if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
-//       params.append('status', status); // Use the correct parameter name here
-//     }
-
-//     const url = `${BASE_URL}${searchEndpoint}?${params}`;
-//     console.log('Fetching URL:', url);
-
-//     const response = await fetch(url, {
+//     // -----------------------------------
+//     // Step 1. Fetch the first page to determine total pages
+//     // -----------------------------------
+//     const firstPageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=1`;
+//     console.log('Fetching URL for pagination metadata:', firstPageUrl);
+//     const firstResponse = await fetch(firstPageUrl, {
 //       headers: {
 //         'User-Agent': 'Mozilla/5.0',
 //         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
 //         'Accept-Language': 'en-US,en;q=0.5'
 //       }
 //     });
-//     if (!response.ok) {
-//       throw new Error(`HTTP error! status: ${response.status}`);
+
+//     if (!firstResponse.ok) {
+//       throw new Error(`HTTP error on page 1! status: ${firstResponse.status}`);
 //     }
 
-//     const html = await response.text();
-//     const $ = cheerio.load(html);
-
-//     let projects = [];
-//     // Table rows
-//     $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
-//       const cells = $(row).find('td');
-//       if (cells.length >= 5) {
-//         const projectStatus = $(cells[2]).text().trim();
-//         // If the client wants to filter by "status" server-side
-//         // and it's a valid status, skip those that don't match
-//         if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
-//           if (projectStatus !== status) {
-//             return;
-//           }
-//         }
-//         // Only add if the status is in the known list
-        
-//         const infoLink = $(cells[3]).find('a').attr('href');
-//         const docLink = $(cells[4]).find('a').attr('href');
-//         const project = {
-//           title: $(cells[0]).text().trim(),
-//           proponent: $(cells[1]).text().trim(),
-//           status: projectStatus,
-//           url: infoLink ? new URL(infoLink, BASE_URL).href : '',
-//           doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
-//           id: infoLink ? infoLink.split('/').pop() : `project-${i}`
-//         };
-//         projects.push(project);
-        
-//       }
-//     });
-
-//     // Pagination
-//     let totalPages = 1;
-//     const paginationLabel = $('.pagination .etichettaRicerca').text();
+//     const firstHtml = await firstResponse.text();
+//     const $first = cheerio.load(firstHtml);
+//     let scrapedTotalPages = 1;
+//     const paginationLabel = $first('.pagination .etichettaRicerca').text();
 //     const match = paginationLabel.match(/Pagina\s+(\d+)\s+di\s+(\d+)/);
 //     if (match) {
-//       totalPages = parseInt(match[2]);
+//       scrapedTotalPages = parseInt(match[2], 10);
+//     }
+//     console.log(`External site reports ${scrapedTotalPages} total page(s)`);
+
+//     // -----------------------------------
+//     // Step 2. Fetch all pages to collect all projects, then filter them.
+//     // -----------------------------------
+//     // (You may consider fetching these concurrently if performance is an issue)
+//     let allProjects = [];
+
+//     // Helper function to process one page of results.
+//     const processPage = async (p) => {
+//       const pageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=${p}`;
+//       console.log(`Fetching page ${p}: ${pageUrl}`);
+//       const response = await fetch(pageUrl, {
+//         headers: {
+//           'User-Agent': 'Mozilla/5.0',
+//           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+//           'Accept-Language': 'en-US,en;q=0.5'
+//         }
+//       });
+//       if (!response.ok) {
+//         console.warn(`Page ${p} fetch failed with status ${response.status}`);
+//         return;
+//       }
+//       const html = await response.text();
+//       const $ = cheerio.load(html);
+//       $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
+//         const cells = $(row).find('td');
+//         if (cells.length >= 5) {
+//           const projectStatus = $(cells[2]).text().trim();
+//           // Apply filter if a valid status is provided
+//           if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
+//             if (projectStatus !== status) {
+//               return; // Skip this row
+//             }
+//           }
+//           // Only add if the status is known (optional safeguard)
+//           if (VALID_STATUSES.includes(projectStatus)) {
+//             const infoLink = $(cells[3]).find('a').attr('href');
+//             const docLink = $(cells[4]).find('a').attr('href');
+//             const project = {
+//               title: $(cells[0]).text().trim(),
+//               proponent: $(cells[1]).text().trim(),
+//               status: projectStatus,
+//               url: infoLink ? new URL(infoLink, BASE_URL).href : '',
+//               doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
+//               id: infoLink ? infoLink.split('/').pop() : `project-${i}-${p}`
+//             };
+//             allProjects.push(project);
+//           }
+//         }
+//       });
+//     };
+
+//     // For demonstration, we fetch sequentially. For performance, consider Promise.all over an array of pages.
+//     for (let p = 1; p <= scrapedTotalPages; p++) {
+//       await processPage(p);
 //     }
 
+//     // -----------------------------------
+//     // Step 3. Re‑paginate the filtered projects.
+//     // -----------------------------------
+//     const pageSize = 20; // Set your desired page size
+//     const totalFiltered = allProjects.length;
+//     const totalPages = Math.ceil(totalFiltered / pageSize);
+//     const startIndex = (requestedPage - 1) * pageSize;
+//     const paginatedProjects = allProjects.slice(startIndex, startIndex + pageSize);
+
+//     // Return results:
 //     res.json({
-//       projects,
+//       projects: paginatedProjects,
 //       totalPages,
-//       currentPage: parseInt(page),
-//       total: projects.length,
+//       currentPage: requestedPage,
+//       total: totalFiltered,
 //       validStatuses: VALID_STATUSES
 //     });
 //   } catch (error) {
@@ -151,130 +279,6 @@ app.get('/', (req, res) => {
 //     });
 //   }
 // });
-app.get('/api/search', async (req, res) => {
-  try {
-    const { keyword = '', status } = req.query;
-    // Use the page parameter only for the final (re‑paginated) results.
-    const requestedPage = parseInt(req.query.page || '1', 10);
-
-    if (!keyword.trim()) {
-      return res.status(400).json({ error: 'Keyword is required' });
-    }
-
-    const searchEndpoint = "/it-IT/Ricerca/ViaLibera";
-    const params = new URLSearchParams({
-      Testo: keyword.trim(),
-      t: 'o'
-    });
-
-    // -----------------------------------
-    // Step 1. Fetch the first page to determine total pages
-    // -----------------------------------
-    const firstPageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=1`;
-    console.log('Fetching URL for pagination metadata:', firstPageUrl);
-    const firstResponse = await fetch(firstPageUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
-      }
-    });
-
-    if (!firstResponse.ok) {
-      throw new Error(`HTTP error on page 1! status: ${firstResponse.status}`);
-    }
-
-    const firstHtml = await firstResponse.text();
-    const $first = cheerio.load(firstHtml);
-    let scrapedTotalPages = 1;
-    const paginationLabel = $first('.pagination .etichettaRicerca').text();
-    const match = paginationLabel.match(/Pagina\s+(\d+)\s+di\s+(\d+)/);
-    if (match) {
-      scrapedTotalPages = parseInt(match[2], 10);
-    }
-    console.log(`External site reports ${scrapedTotalPages} total page(s)`);
-
-    // -----------------------------------
-    // Step 2. Fetch all pages to collect all projects, then filter them.
-    // -----------------------------------
-    // (You may consider fetching these concurrently if performance is an issue)
-    let allProjects = [];
-
-    // Helper function to process one page of results.
-    const processPage = async (p) => {
-      const pageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=${p}`;
-      console.log(`Fetching page ${p}: ${pageUrl}`);
-      const response = await fetch(pageUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5'
-        }
-      });
-      if (!response.ok) {
-        console.warn(`Page ${p} fetch failed with status ${response.status}`);
-        return;
-      }
-      const html = await response.text();
-      const $ = cheerio.load(html);
-      $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
-        const cells = $(row).find('td');
-        if (cells.length >= 5) {
-          const projectStatus = $(cells[2]).text().trim();
-          // Apply filter if a valid status is provided
-          if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
-            if (projectStatus !== status) {
-              return; // Skip this row
-            }
-          }
-          // Only add if the status is known (optional safeguard)
-          if (VALID_STATUSES.includes(projectStatus)) {
-            const infoLink = $(cells[3]).find('a').attr('href');
-            const docLink = $(cells[4]).find('a').attr('href');
-            const project = {
-              title: $(cells[0]).text().trim(),
-              proponent: $(cells[1]).text().trim(),
-              status: projectStatus,
-              url: infoLink ? new URL(infoLink, BASE_URL).href : '',
-              doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
-              id: infoLink ? infoLink.split('/').pop() : `project-${i}-${p}`
-            };
-            allProjects.push(project);
-          }
-        }
-      });
-    };
-
-    // For demonstration, we fetch sequentially. For performance, consider Promise.all over an array of pages.
-    for (let p = 1; p <= scrapedTotalPages; p++) {
-      await processPage(p);
-    }
-
-    // -----------------------------------
-    // Step 3. Re‑paginate the filtered projects.
-    // -----------------------------------
-    const pageSize = 20; // Set your desired page size
-    const totalFiltered = allProjects.length;
-    const totalPages = Math.ceil(totalFiltered / pageSize);
-    const startIndex = (requestedPage - 1) * pageSize;
-    const paginatedProjects = allProjects.slice(startIndex, startIndex + pageSize);
-
-    // Return results:
-    res.json({
-      projects: paginatedProjects,
-      totalPages,
-      currentPage: requestedPage,
-      total: totalFiltered,
-      validStatuses: VALID_STATUSES
-    });
-  } catch (error) {
-    console.error('Server error in /api/search:', error);
-    res.status(500).json({
-      error: 'Failed to fetch data',
-      details: error.message
-    });
-  }
-});
 // -----------------------------------
 // /api/procedure
 // -----------------------------------
