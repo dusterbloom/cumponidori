@@ -287,7 +287,7 @@ const App = () => {
           label="Seleziona tutto (Pagina corrente)"
         />
 
-        <select
+        {/* <select
           value={statusFilter}
           onChange={handleStatusFilterChange}
           style={{ height: "40px", fontSize: "16px", padding: "5px" }}
@@ -298,7 +298,7 @@ const App = () => {
               {s}
             </option>
           ))}
-        </select>
+        </select> */}
 
         <Button
         variant="contained"
