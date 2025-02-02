@@ -461,11 +461,25 @@ app.get('/api/download', async (req, res) => {
       }
     });
 
-    // Set PDF headers
-    res.setHeader('Content-Type', response.headers['content-type'] || 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${response.headers['content-disposition'] || 'document.pdf'}"`);
+    // Parse the remote header's content-disposition to extract the filename
+    const remoteDisposition = response.headers['content-disposition'];
+    let filename = 'document.pdf'; // fallback if no filename can be determined
 
-    // Stream the response directly to the client
+    if (remoteDisposition) {
+      // This regex looks for filename= followed by either a quoted or unquoted string
+      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i;
+      const matches = filenameRegex.exec(remoteDisposition);
+      if (matches != null && matches[1]) {
+        // Remove surrounding quotes if any
+        filename = matches[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Set the proper headers for file download.
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Stream the file content to the client.
     response.data.pipe(res);
 
   } catch (error) {
@@ -476,6 +490,7 @@ app.get('/api/download', async (req, res) => {
     });
   }
 });
+
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
