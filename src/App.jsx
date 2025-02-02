@@ -8,6 +8,7 @@ import {
   FormControlLabel,
   Checkbox,
   Button,
+  LinearProgress
 } from "@mui/material";
 import SearchForm from "./components/SearchForm";
 import ResultsTable from "./components/ResultsTable";
@@ -20,6 +21,7 @@ import {
   getDocumentDownloadUrl,
 } from "./api";
 import axios from "axios";
+
 
 const STATUS_OPTIONS = [
   "Valutazione preliminare",
@@ -44,6 +46,14 @@ const App = () => {
   // For selection + downloads
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [downloadingDocuments, setDownloadingDocuments] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const [downloadMode, setDownloadMode] = useState('browser'); // 'browser' or 'directory'
+
+  // Check if File System Access API is supported
+  const isFileSystemAccessSupported = () => {
+    return 'showDirectoryPicker' in window;
+  };
+
 
   // Toggle display for CSV and PDF explorers
   const [showCSVExplorer, setShowCSVExplorer] = useState(false);
@@ -107,90 +117,150 @@ const App = () => {
     );
   };
 
-  /**
-   * Download each selected project's documents by:
-   *   1) calling /api/procedure to get procedure URLs
-   *   2) calling /api/documents for each procedure URL
-   *   3) calling /api/download for each document
-   *   4) create a Blob + anchor to trigger the browser's "Save File" dialog
-   *
-   * We'll do a short delay between downloads to avoid spamming the server.
-   */
+
+  // Traditional browser download using blob + anchor
+  const downloadWithBrowser = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(blobUrl);
+      return true;
+    } catch (error) {
+      console.error(`Error downloading ${filename}:`, error);
+      return false;
+    }
+  };
+
+  // Directory-based download using File System Access API
+  const downloadWithFileSystem = async (dirHandle, url, filename) => {
+    try {
+      // Verify permissions
+      const permissionState = await dirHandle.queryPermission({ mode: 'readwrite' });
+      if (permissionState === 'denied') {
+        throw new Error('Write permission denied');
+      }
+      if (permissionState === 'prompt') {
+        const newPermission = await dirHandle.requestPermission({ mode: 'readwrite' });
+        if (newPermission !== 'granted') {
+          throw new Error('Write permission denied');
+        }
+      }
+
+      // Get file handle and create writable
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable = await fileHandle.createWritable();
+
+      // Fetch and write the file
+      const response = await fetch(url);
+      const blob = await response.blob();
+      await writable.write(blob);
+      await writable.close();
+      return true;
+    } catch (error) {
+      console.error(`Error saving ${filename}:`, error);
+      return false;
+    }
+  };
+
   const handleDownloadDocuments = async () => {
     if (!selectedProjects?.length) return;
     setDownloadingDocuments(true);
     setError(null);
-  
-    try {
-      // Let the user choose the download directory
-      const downloadPath = await window.showDirectoryPicker();
-  
-      for (const projectId of selectedProjects) {
-        const project = results?.find((p) => p?.id === projectId);
-        if (!project) {
-          console.warn(`Project ${projectId} not found in results`);
-          continue;
+
+    let dirHandle = null;
+    
+    // Try to use directory picker if supported
+    if (isFileSystemAccessSupported()) {
+      try {
+        dirHandle = await window.showDirectoryPicker();
+        setDownloadMode('directory');
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.warn('Directory picker failed, falling back to browser download:', error);
         }
-  
-        console.log(`Fetching procedure links for: ${project.title}`);
+        setDownloadMode('browser');
+      }
+    }
+
+    try {
+      // Calculate total files
+      let totalFiles = 0;
+      let downloadedFiles = 0;
+
+      // First pass to count files
+      for (const projectId of selectedProjects) {
+        const project = results?.find(p => p?.id === projectId);
+        if (!project) continue;
+        
         const procedureLinks = await getProcedureLinks(project.url);
-  
         for (const procedureUrl of procedureLinks) {
           if (!procedureUrl) continue;
-  
-          console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
-  
+          totalFiles += documents.length;
+        }
+      }
+
+      setDownloadProgress({ current: 0, total: totalFiles });
+
+      // Second pass to download files
+      for (const projectId of selectedProjects) {
+        const project = results?.find(p => p?.id === projectId);
+        if (!project) continue;
+
+        const procedureLinks = await getProcedureLinks(project.url);
+        
+        for (const procedureUrl of procedureLinks) {
+          if (!procedureUrl) continue;
+
+          const documents = await getDocumentLinks(procedureUrl);
+          
           for (const doc of documents) {
-            let filename = doc?.filename || "document.pdf";
+            if (!doc?.downloadUrl) continue;
             
-            // Remove the "attachment; filename=" prefix and any quotes
+            let filename = doc?.filename || "document.pdf";
             filename = filename.replace(/^attachment; filename=["']?/, '').replace(/["']$/, '');
-  
-            const downloadUrl = doc?.downloadUrl;
-  
-            if (!downloadUrl) {
-              console.warn(`Document missing download URL:`, doc);
-              continue;
+            const safeFilename = `${projectId}_${filename.replace(/[\\\/\*?:"<>|]/g, "_")}`;
+            
+            const downloadUrl = getDocumentDownloadUrl(doc.downloadUrl);
+
+            let success = false;
+            if (dirHandle) {
+              success = await downloadWithFileSystem(dirHandle, downloadUrl, safeFilename);
+              if (!success) {
+                // If directory download fails, fall back to browser download
+                success = await downloadWithBrowser(downloadUrl, safeFilename);
+              }
+            } else {
+              success = await downloadWithBrowser(downloadUrl, safeFilename);
             }
-  
-            try {
-              console.log(`Downloading document: ${filename}`);
-  
-              // Create a link element
-              const link = document.createElement('a');
-              link.href = getDocumentDownloadUrl(downloadUrl);
-              link.download = filename;
-  
-              // Append to html link element page
-              document.body.appendChild(link);
-  
-              // Start download
-              link.click();
-  
-              // Clean up and remove the link
-              link.parentNode.removeChild(link);
-  
-              await new Promise((resolve) => setTimeout(resolve, 1500));
-            } catch (e) {
-              console.error("Error downloading document:", e);
+
+            if (success) {
+              downloadedFiles++;
+              setDownloadProgress({ current: downloadedFiles, total: totalFiles });
             }
+
+            // Delay between downloads
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
       }
-  
-      console.log("Download process completed");
-    } catch (e) {
-      if (e.name === 'AbortError') {
-        console.log('User cancelled directory selection');
-      } else {
-        console.error("Error while downloading documents:", e);
-        setError(`Error while downloading: ${e.message}`);
-      }
+
+    } catch (error) {
+      console.error('Download process error:', error);
+      setError(`Download error: ${error.message}`);
     } finally {
       setDownloadingDocuments(false);
+      setDownloadProgress({ current: 0, total: 0 });
     }
   };
+
 
   const displayedResults = results;
 
@@ -231,13 +301,16 @@ const App = () => {
         </select>
 
         <Button
-          variant="contained"
-          color="primary"
-          disabled={!selectedProjects.length || downloadingDocuments}
-          onClick={handleDownloadDocuments}
-        >
-          {downloadingDocuments ? "Downloading..." : "Scarica i documenti"}
-        </Button>
+        variant="contained"
+        color="primary"
+        disabled={!selectedProjects.length || downloadingDocuments}
+        onClick={handleDownloadDocuments}
+      >
+        {downloadingDocuments ? 
+          `Scaricando (${downloadMode === 'directory' ? 'nella cartella' : 'to downloads folder'})...` : 
+          "Scarica i documenti selezionati"
+        }
+      </Button>
 
         <Button
           variant="contained"
@@ -279,7 +352,17 @@ const App = () => {
         />
       )}
 
-      {/* No results message */}
+      {downloadingDocuments && downloadProgress.total > 0 && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Scaricando: {downloadProgress.current} di {downloadProgress.total} files
+          <LinearProgress 
+            variant="determinate" 
+            value={(downloadProgress.current / downloadProgress.total) * 100}
+            sx={{ mt: 1 }}
+          />
+        </Alert>
+      )}
+      
       {!loading && !error && results.length === 0 && currentKeyword && (
         <Alert severity="info">Nudda. Intenda chircare mellus.</Alert>
       )}
