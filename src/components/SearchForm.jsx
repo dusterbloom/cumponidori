@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Box } from '@mui/material';
 
 const SearchForm = ({ onSearch }) => {
-  const [keyword, setKeyword] = useState('Sardegna');
+  const [keyword, setKeyword] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
