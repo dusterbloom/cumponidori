@@ -120,49 +120,57 @@ const App = () => {
     if (!selectedProjects?.length) return;
     setDownloadingDocuments(true);
     setError(null);
-
+  
     try {
+      // Let the user choose the download directory
+      const downloadPath = await window.showDirectoryPicker();
+  
       for (const projectId of selectedProjects) {
         const project = results?.find((p) => p?.id === projectId);
         if (!project) {
           console.warn(`Project ${projectId} not found in results`);
           continue;
         }
-
+  
         console.log(`Fetching procedure links for: ${project.title}`);
         const procedureLinks = await getProcedureLinks(project.url);
-
+  
         for (const procedureUrl of procedureLinks) {
           if (!procedureUrl) continue;
-
+  
           console.log(`Fetching document links for procedure: ${procedureUrl}`);
           const documents = await getDocumentLinks(procedureUrl);
-
+  
           for (const doc of documents) {
-            const filename = doc?.filename || "document.pdf";
+            let filename = doc?.filename || "document.pdf";
+            
+            // Remove the "attachment; filename=" prefix and any quotes
+            filename = filename.replace(/^attachment; filename=["']?/, '').replace(/["']$/, '');
+  
             const downloadUrl = doc?.downloadUrl;
-
+  
             if (!downloadUrl) {
               console.warn(`Document missing download URL:`, doc);
               continue;
             }
-
+  
             try {
               console.log(`Downloading document: ${filename}`);
-
-              const iframe = document.createElement("iframe");
-              iframe.style.display = "none";
-              document.body.appendChild(iframe);
-
-              // Use the helper function here
-              iframe.src = getDocumentDownloadUrl(downloadUrl);
-
-              setTimeout(() => {
-                if (iframe?.parentNode) {
-                  iframe.parentNode.removeChild(iframe);
-                }
-              }, 5000);
-
+  
+              // Create a link element
+              const link = document.createElement('a');
+              link.href = getDocumentDownloadUrl(downloadUrl);
+              link.download = filename;
+  
+              // Append to html link element page
+              document.body.appendChild(link);
+  
+              // Start download
+              link.click();
+  
+              // Clean up and remove the link
+              link.parentNode.removeChild(link);
+  
               await new Promise((resolve) => setTimeout(resolve, 1500));
             } catch (e) {
               console.error("Error downloading document:", e);
@@ -170,11 +178,15 @@ const App = () => {
           }
         }
       }
-
+  
       console.log("Download process completed");
     } catch (e) {
-      console.error("Error while downloading documents:", e);
-      setError(`Error while downloading: ${e.message}`);
+      if (e.name === 'AbortError') {
+        console.log('User cancelled directory selection');
+      } else {
+        console.error("Error while downloading documents:", e);
+        setError(`Error while downloading: ${e.message}`);
+      }
     } finally {
       setDownloadingDocuments(false);
     }
