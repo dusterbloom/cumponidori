@@ -30,12 +30,6 @@ const PDFExplorer: React.FC = () => {
   const [coords, setCoords] = useState<Coordinate[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles(Array.from(e.target.files));
-    }
-  };
-
   const extractItalianProjectDetails = (text: string): InstallationDetails => {
     // Common Italian project naming patterns
     const nameRegex = /Impianto (?:fotovoltaico|eolico|agrivoltaico) ["']([^"']+)["']/i;
@@ -150,6 +144,13 @@ const PDFExplorer: React.FC = () => {
 
     setCoords(allCoords);
     setProcessing(false);
+  };
+
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
   };
 
   const exportToKML = () => {
