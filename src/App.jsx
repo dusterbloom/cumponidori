@@ -316,7 +316,7 @@ const App = () => {
           variant="contained"
           onClick={() => setShowCSVExplorer((prev) => !prev)}
         >
-          {showCSVExplorer ? "Nascondi EsploraCSV" : "Mostra EsploraCSV"}
+          {showCSVExplorer ? "Nascondi EsploraCSV" : "EsploraCSV"}
         </Button>
 
         {/* New button for exploring PDFs */}
