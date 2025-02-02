@@ -12,13 +12,14 @@ import {
 import SearchForm from "./components/SearchForm";
 import ResultsTable from "./components/ResultsTable";
 import CSVExplorer from "./components/CSVExplorer";
+import PDFExplorer from "./components/PDFExplorer"; // <-- New import for PDF handling
 import {
   searchProjects,
   getProcedureLinks,
   getDocumentLinks,
   getDocumentDownloadUrl,
 } from "./api";
-import axios from "axios"; // We'll use a local axios instance for downloads too.
+import axios from "axios";
 
 const STATUS_OPTIONS = [
   "Valutazione preliminare",
@@ -44,15 +45,15 @@ const App = () => {
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [downloadingDocuments, setDownloadingDocuments] = useState(false);
 
-  // CSV EXPLORER
+  // Toggle display for CSV and PDF explorers
   const [showCSVExplorer, setShowCSVExplorer] = useState(false);
+  const [showPDFExplorer, setShowPDFExplorer] = useState(false);
 
   // Single Axios instance for large/slow downloads: no short timeout
   const downloadClient = axios.create({
     baseURL: import.meta.env.PROD
       ? "https://cumponidori.onrender.com"
       : "http://localhost:3005",
-    // Remove or greatly increase the default timeout:
     timeout: 120000, // 2 minutes, or remove it entirely
     headers: { "Content-Type": "application/json" },
   });
@@ -225,11 +226,20 @@ const App = () => {
         >
           {downloadingDocuments ? "Downloading..." : "Scarica i documenti"}
         </Button>
+
         <Button
           variant="contained"
           onClick={() => setShowCSVExplorer((prev) => !prev)}
         >
           {showCSVExplorer ? "Nascondi EsploraCSV" : "Mostra EsploraCSV"}
+        </Button>
+
+        {/* New button for exploring PDFs */}
+        <Button
+          variant="contained"
+          onClick={() => setShowPDFExplorer((prev) => !prev)}
+        >
+          {showPDFExplorer ? "Nascondi EsploraPDF" : "EsploraPDF"}
         </Button>
       </Box>
 
@@ -262,15 +272,17 @@ const App = () => {
         <Alert severity="info">Nudda. Intenda chircare mellus.</Alert>
       )}
 
-      {/* Toggle Button for CSV Explorer
-      <Box sx={{ mt: 4, textAlign: "center" }}>
-  
-      </Box> */}
-
       {/* Conditionally render the CSV Explorer */}
       {showCSVExplorer && (
         <Box sx={{ mt: 4 }}>
           <CSVExplorer />
+        </Box>
+      )}
+
+      {/* Conditionally render the new PDF Explorer */}
+      {showPDFExplorer && (
+        <Box sx={{ mt: 4 }}>
+          <PDFExplorer />
         </Box>
       )}
     </Container>
