@@ -218,7 +218,7 @@ const PDFExplorer: React.FC = () => {
           disabled={files.length === 0 || processing}
           sx={{ mr: 2 }}
         >
-          {processing ? "Processing..." : "Analyze PDFs"}
+          {processing ? "Forroghende..." : "Forroga is PDFs"}
         </Button>
         {results.length > 0 && (
           <Button
