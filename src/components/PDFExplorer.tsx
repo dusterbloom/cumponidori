@@ -60,9 +60,12 @@ const PDFExplorer: React.FC = () => {
     }
   };
 
-  const analyzePDFContent = (text: string, filename: string): AnalysisResult => {
+  const analyzePDFContent = async (file: File): Promise<AnalysisResult> => {
+    const text = await file.text();
+
+    
     const findings: AnalysisResult = {
-      filename,
+      filename: file.name,
       gpsCoordinates: {},
       turbineInfo: {
         vendors: [],
@@ -72,7 +75,6 @@ const PDFExplorer: React.FC = () => {
       measurements: {}
     };
 
-    // Process GPS coordinates
     Object.entries(patterns.gps).forEach(([format, pattern]) => {
       const matches = text.match(pattern);
       if (matches) {
@@ -80,7 +82,6 @@ const PDFExplorer: React.FC = () => {
       }
     });
 
-    // Process turbine information
     patterns.turbineVendors.forEach(vendor => {
       if (text.includes(vendor)) {
         findings.turbineInfo.vendors.push(vendor);
@@ -93,14 +94,12 @@ const PDFExplorer: React.FC = () => {
       }
     });
 
-    // Process battery information
     patterns.batteryBrands.forEach(brand => {
       if (text.includes(brand)) {
         findings.batteryInfo.push(brand);
       }
     });
 
-    // Process measurements
     Object.entries(patterns.data).forEach(([key, pattern]) => {
       const match = text.match(pattern);
       if (match) {
@@ -117,20 +116,10 @@ const PDFExplorer: React.FC = () => {
     setResults([]);
 
     try {
-      for (const file of files) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        
-        let fullText = '';
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          fullText += textContent.items.map((item: any) => item.str).join(" ");
-        }
-
-        const analysis = analyzePDFContent(fullText, file.name);
-        setResults(prev => [...prev, analysis]);
-      }
+      const analysisResults = await Promise.all(
+        files.map(file => analyzePDFContent(file))
+      );
+      setResults(analysisResults);
     } catch (err: any) {
       console.error("Error processing files:", err);
       setError(`Error processing files: ${err.message}`);
