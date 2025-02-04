@@ -312,22 +312,24 @@ const App = () => {
         }
       </Button>
 
+         {/* New button for exploring PDFs */}
+         <Button
+          variant="contained"
+          onClick={() => setShowPDFExplorer((prev) => !prev)}
+        >
+          {showPDFExplorer ? "Nascondi PRUGADORI" : "PRUGADORI PDF"}
+        </Button>
+
+
         <Button
           variant="contained"
           onClick={() => setShowCSVExplorer((prev) => !prev)}
         >
-          {showCSVExplorer ? "Nascondi EsploraCSV" : "EsploraCSV"}
+          {showCSVExplorer ? "Nascondi SUADORI" : "SUADORI CSV"}
         </Button>
+        </Box>
 
-        {/* New button for exploring PDFs */}
-        <Button
-          variant="contained"
-          onClick={() => setShowPDFExplorer((prev) => !prev)}
-        >
-          {showPDFExplorer ? "Nascondi EsploraPDF" : "EsploraPDF"}
-        </Button>
-      </Box>
-
+     
       {loading && (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />

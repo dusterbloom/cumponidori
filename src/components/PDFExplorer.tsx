@@ -202,33 +202,47 @@ const PDFExplorer: React.FC = () => {
 
   return (
     <Box sx={{ p: 2, border: "1px dashed gray" }}>
-      <Typography variant="h6" gutterBottom>
-        Prugadori
-      </Typography>
-      <input
+
+      {/* <input
         type="file"
         multiple
         accept="application/pdf"
         onChange={handleFileChange}
+      /> */}
+         <Box sx={{ mb: 2 }}>
+      <input
+        accept="application/pdf"
+        id="pdf-upload"
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
       />
-      <Box sx={{ mt: 2 }}>
+      <label htmlFor="pdf-upload">
+        <Button variant="contained" component="span" color="primary">
+          Carica PDFs
+        </Button>
+      </label>
+    </Box>
+
+    <Box sx={{ mt: 2 }}>
+      <Button
+        variant="contained"
+        onClick={processFiles}
+        disabled={files.length === 0 || processing}
+        sx={{ mr: 2 }}
+      >
+        {processing ? "Forroghende..." : "Forroga is PDFs"}
+      </Button>
+      {results.length > 0 && (
         <Button
           variant="contained"
-          onClick={processFiles}
-          disabled={files.length === 0 || processing}
-          sx={{ mr: 2 }}
+          onClick={downloadCSV}
         >
-          {processing ? "Forroghende..." : "Forroga is PDFs"}
+          Esporta CSV
         </Button>
-        {results.length > 0 && (
-          <Button
-            variant="contained"
-            onClick={downloadCSV}
-          >
-            Esporta CSV
-          </Button>
-        )}
-      </Box>
+      )}
+    </Box>
 
       {processing && (
         <Box sx={{ mt: 2 }}>

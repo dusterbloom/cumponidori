@@ -179,9 +179,7 @@ const CSVExplorer = () => {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ color: blue[700], mb: 2 }}>
-        Esplora CSV 
-      </Typography>
+
 
       {/* CSV Upload */}
       <Box sx={{ mb: 2 }}>
