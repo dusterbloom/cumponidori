@@ -27,35 +27,242 @@ const app = express();
 const PORT = process.env.PORT || 3005;
 
 // Update CORS configuration
-const corsOptions = {
-  origin: [
-    'https://cumponidori.netlify.app',
-    'http://localhost:5173',
-    'http://localhost:3005'
-  ],
-  methods: ['GET', 'POST', 'OPTIONS'],
+// const corsOptions = {
+//   origin: [
+//     'https://cumponidori.netlify.app',
+//     'http://localhost:5174',
+//     'http://localhost:3000'
+//   ],
+//   methods: ['GET', 'POST', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   credentials: true,
+//   optionsSuccessStatus: 200
+// };
+
+// Apply CORS middleware
+// app.use(cors(corsOptions));
+
+// Handle preflight requests
+// app.options('*', cors(corsOptions));
+
+
+// Middleware
+app.use(cors({
+  origin: ['http://localhost:5174', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 200
-};
+}));
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
 
 // Add error handling middleware
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    details: err.message,
-    docs: [],
-    currentPage: 1,
-    totalPages: 1
+  console.error('Error:', err);
+  
+  res.header('Access-Control-Allow-Origin', 'http://localhost:5174');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
+
+// 404 handler
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+
+// Python process management
+let pythonProcess = null;
+let isInitializing = false;
+
+function initializePythonProcess() {
+  if (isInitializing) return;
+  isInitializing = true;
+
+  const scriptPath = join(__dirname, 'nlp_service.py');
+  console.log('Starting Python process:', scriptPath);
+
+  pythonProcess = spawn('python', [scriptPath]);
+
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`Python stdout: ${data}`);
+  });
+
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python stderr: ${data}`);
+  });
+
+  pythonProcess.on('close', (code) => {
+    console.log(`Python process exited with code ${code}`);
+    pythonProcess = null;
+    isInitializing = false;
+    setTimeout(initializePythonProcess, 5000);
+  });
+}
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  console.log('Test endpoint hit');
+  res.json({ message: 'Server is working!' });
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    pythonService: pythonProcess ? 'running' : 'stopped'
+  });
+});
+
+// PDF analysis endpoint
+app.post('/api/analyze-pdf', async (req, res) => {
+  console.log('Analyze PDF endpoint hit');
+  
+  if (!pythonProcess) {
+    try {
+      initializePythonProcess();
+    } catch (error) {
+      console.error('Failed to initialize Python process:', error);
+      return res.status(500).json({
+        error: 'Failed to initialize NLP service',
+        details: error.message
+      });
+    }
+  }
+
+  try {
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: 'PDF content is required' });
+    }
+
+    console.log('Sending data to Python process');
+    pythonProcess.stdin.write(JSON.stringify({ content }) + '\n');
+
+    const result = await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('NLP analysis timeout'));
+      }, 30000);
+
+      pythonProcess.stdout.once('data', (data) => {
+        clearTimeout(timeout);
+        try {
+          resolve(JSON.parse(data.toString()));
+        } catch (e) {
+          reject(new Error('Invalid response from NLP service'));
+        }
+      });
+
+      pythonProcess.stderr.once('data', (data) => {
+        clearTimeout(timeout);
+        reject(new Error(`NLP service error: ${data.toString()}`));
+      });
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('PDF Analysis error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze PDF',
+      details: error.message 
+    });
+  }
+});
+
+// Add this with your other endpoint definitions
+// app.post('/api/analyze-pdf', async (req, res) => {
+//   console.log('Received analyze-pdf request');
+  
+//   if (!pythonProcess) {
+//     try {
+//       initializePythonProcess();
+//     } catch (error) {
+//       console.error('Failed to initialize Python process:', error);
+//       return res.status(500).json({
+//         error: 'Failed to initialize NLP service',
+//         details: error.message
+//       });
+//     }
+//   }
+
+//   try {
+//     const { content } = req.body;
+//     if (!content) {
+//       return res.status(400).json({ error: 'PDF content is required' });
+//     }
+
+//     console.log('Sending data to Python process');
+    
+//     // Send data to Python process
+//     pythonProcess.stdin.write(JSON.stringify({ content }) + '\n');
+
+//     // Get response from Python process
+//     const result = await new Promise((resolve, reject) => {
+//       const timeout = setTimeout(() => {
+//         reject(new Error('NLP analysis timeout'));
+//       }, 30000);
+
+//       let dataBuffer = '';
+
+//       const handleData = (data) => {
+//         dataBuffer += data.toString();
+//         try {
+//           const result = JSON.parse(dataBuffer);
+//           clearTimeout(timeout);
+//           pythonProcess.stdout.removeListener('data', handleData);
+//           resolve(result);
+//         } catch (e) {
+//           // If JSON.parse fails, we might need more data
+//         }
+//       };
+
+//       pythonProcess.stdout.on('data', handleData);
+
+//       pythonProcess.stderr.once('data', (data) => {
+//         clearTimeout(timeout);
+//         pythonProcess.stdout.removeListener('data', handleData);
+//         reject(new Error(`NLP service error: ${data.toString()}`));
+//       });
+//     });
+
+//     console.log('Analysis complete:', result);
+//     res.json(result);
+//   } catch (error) {
+//     console.error('PDF Analysis error:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to analyze PDF',
+//       details: error.message 
+//     });
+//   }
+// });
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Something broke!',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  console.log('404 Not Found:', req.method, req.url);
+  res.status(404).json({ error: 'Not Found' });
+});
+
+
+
 
 const BASE_URL = "https://va.mite.gov.it";
 
@@ -379,76 +586,21 @@ app.get('/api/download', async (req, res) => {
 });
 
 
-
-
-// Add this after your existing endpoints
-let pythonProcess;
-
-function initializePythonProcess() {
-  const scriptPath = join(__dirname, 'nlp_service.py');
-  pythonProcess = spawn('python', [scriptPath]);
-  
-  pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Something broke!',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
-  
-  pythonProcess.on('close', (code) => {
-    console.log(`Python process exited with code ${code}`);
-    // Restart process if it crashes
-    setTimeout(initializePythonProcess, 1000);
-  });
-}
-
-// Initialize Python process on server start
-initializePythonProcess();
-
-app.post('/api/analyze-pdf', async (req, res) => {
-  try {
-    if (!pythonProcess) {
-      throw new Error('NLP service not initialized');
-    }
-
-    const { content } = req.body;
-    if (!content) {
-      return res.status(400).json({ error: 'PDF content is required' });
-    }
-
-    // Send PDF content to Python process
-    pythonProcess.stdin.write(JSON.stringify({ content }) + '\n');
-
-    // Get response from Python process
-    const result = await new Promise((resolve, reject) => {
-      let data = '';
-      
-      const timeout = setTimeout(() => {
-        reject(new Error('NLP analysis timeout'));
-      }, 30000);
-
-      pythonProcess.stdout.once('data', (chunk) => {
-        clearTimeout(timeout);
-        data += chunk;
-        try {
-          const result = JSON.parse(data);
-          resolve(result);
-        } catch (e) {
-          reject(new Error('Invalid response from NLP service'));
-        }
-      });
-    });
-
-    if (result.error) {
-      throw new Error(result.error);
-    }
-
-    res.json(result);
-  } catch (error) {
-    console.error('PDF Analysis error:', error);
-    res.status(500).json({ 
-      error: 'Failed to analyze PDF',
-      details: error.message 
-    });
-  }
 });
+
+// 404 handler
+app.use((req, res) => {
+  console.log('404 Not Found:', req.method, req.url);
+  res.status(404).json({ error: 'Not Found' });
+});
+
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {

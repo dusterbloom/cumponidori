@@ -8,6 +8,13 @@ import base64
 import io
 import pdfplumber
 
+
+def log_message(message):
+    print(json.dumps({"message": message}), flush=True)
+
+def log_error(error):
+    print(json.dumps({"error": str(error)}), flush=True)
+
 class ItalianNLPService:
     def __init__(self):
         # Load Italian language model
@@ -116,5 +123,20 @@ def main():
             print(json.dumps({'error': str(e)}))
             sys.stdout.flush()
 
+# Update your main function to include better logging
 if __name__ == "__main__":
-    main()
+    try:
+        log_message("NLP service starting...")
+        service = ItalianNLPService()
+        log_message("NLP service ready")
+        
+        for line in sys.stdin:
+            try:
+                data = json.loads(line)
+                result = service.process_pdf(data['content'])
+                print(json.dumps(result), flush=True)
+            except Exception as e:
+                log_error(f"Error processing request: {str(e)}")
+    except Exception as e:
+        log_error(f"Error initializing service: {str(e)}")
+        sys.exit(1)

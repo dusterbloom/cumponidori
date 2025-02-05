@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev:client": "vite",
-    "dev:server": "node server/index.js",
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "setup:python": "cd server && python3 setup.py",
+    "dev:client": "vite",
+    "dev:server": "node server/index.js",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""
   },
 "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -70,35 +70,44 @@ const PDFExplorer: React.FC = () => {
 
   const analyzePDF = async (pdfFile: PDFFile, index: number) => {
     if (pdfFile.analyzing) return;
-
+  
     setPdfFiles(prev => prev.map((f, i) => 
       i === index ? { ...f, analyzing: true, error: undefined } : f
     ));
-
+  
     try {
       const reader = new FileReader();
       
-      const result = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
+      const base64Content = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          const content = result.split(',')[1];
+          resolve(content);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
         reader.readAsDataURL(pdfFile.file);
       });
-
-      const base64Content = result.split(',')[1];
-      
-      const response = await fetch('http://localhost:3001/api/analyze-pdf', {
+  
+      const response = await fetch('/api/analyze-pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: base64Content }),
+        body: JSON.stringify({ content: base64Content })
       });
-
+  
       if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.statusText}`);
+        throw new Error("Analysis failed: \${response.status} \${response.statusText}");
       }
-
-      const analysisResult = await response.json();
+  
+      const data = await response.json();
+  
+      // Ensure the response has the correct structure
+      const analysisResult: AnalysisResult = {
+        entities: Array.isArray(data.entities) ? data.entities : [],
+        matches: Array.isArray(data.matches) ? data.matches : [],
+        tables: Array.isArray(data.tables) ? data.tables : []
+      };
       
       setPdfFiles(prev => prev.map((f, i) => 
         i === index ? { 
@@ -109,6 +118,7 @@ const PDFExplorer: React.FC = () => {
         } : f
       ));
     } catch (error) {
+      console.error('PDF Analysis error:', error);
       setPdfFiles(prev => prev.map((f, i) => 
         i === index ? { 
           ...f, 
@@ -118,6 +128,23 @@ const PDFExplorer: React.FC = () => {
       ));
     }
   };
+
+  const testConnection = async () => {
+    try {
+      console.log('Testing server connection...');
+      const response = await fetch('/api/test');
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Server test response:', data);
+      alert(`Server response: ${data.message}`);
+    } catch (error) {
+      console.error('Server test failed:', error);
+      alert(`Server test failed: ${error.message}`);
+    }
+  };
+
 
   const handleAnalyzeAll = async () => {
     setGlobalError(null);
@@ -375,6 +402,14 @@ const PDFExplorer: React.FC = () => {
           </Typography>
         </Paper>
       )}
+
+<Button
+  variant="contained"
+  onClick={testConnection}
+  sx={{ mr: 1 }}
+>
+  Test Connection
+</Button>
     </Box>
   );
 };
