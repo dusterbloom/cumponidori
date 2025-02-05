@@ -26,6 +26,7 @@ import {
   Download as DownloadIcon,
   Article as ArticleIcon
 } from '@mui/icons-material';
+import Papa from 'papaparse';
 
 interface AnalysisResult {
   entities: Array<{
@@ -165,75 +166,66 @@ const PDFExplorer: React.FC = () => {
 
 
   const handleDownloadCSV = () => {
+    // Transform PDF analysis results into flattened rows
     const results = pdfFiles
       .filter(f => f.result)
-      .map(f => {
-        // Group entities by type with cleaner formatting
-        const formatEntities = (entities: any[], type: string) => 
-          entities
-            .filter(e => e.label === type)
-            .map(e => `${e.text} | ${e.context || ''}`)
-            .join(';;');
+      .flatMap((f, fileIndex) => {
+        // Transform entities into rows
+        const entityRows = f.result.entities.map((e, idx) => ({
+          "PDF": f.file.name,
+          "N. pagina": "Text",
+          "Tipo": "Entity",
+          "Categoria": e.label,
+          "Testo": e.text,
+          "Posizione": `${e.start}-${e.end}`,
+          "ID": `entity_${fileIndex}_${idx}`
+        }));
   
-        // Format matches with cleaner structure
-        const formatMatches = (matches: any[], pattern: string) =>
-          matches
-            .filter(m => m.pattern === pattern)
-            .map(m => `${m.text} | ${m.context || ''}`)
-            .join(';;');
+        // Transform pattern matches into rows
+        const matchRows = f.result.matches.map((m, idx) => ({
+          "PDF": f.file.name,
+          "N. pagina": "Text",
+          "Tipo": "Pattern",
+          "Categoria": m.pattern,
+          "Testo": m.text,
+          "Posizione": `${m.start}-${m.end}`,
+          "ID": `match_${fileIndex}_${idx}`
+        }));
   
-        // Format tables more cleanly
-        const formatTables = (tables: any[]) =>
-          tables.map((table, idx) => {
-            const headerRow = table.data[0]?.join(' | ');
-            const dataRows = table.data.slice(1, 3).map(row => row.join(' | '));
-            return `Table ${idx + 1} (Page ${table.page})::${headerRow}::${dataRows.join('::')}`;
-          }).join('||');
+        // Transform tables into rows
+        const tableRows = f.result.tables.flatMap((table, tableIdx) => 
+          table.data.flatMap((row, rowIdx) => 
+            row.map((cell, colIdx) => {
+              if (!cell || cell.trim() === '') return null;
+              return {
+                "PDF": f.file.name,
+                "N. pagina": String(table.page),
+                "Tipo": "Table",
+                "Categoria": `Table ${tableIdx + 1}`,
+                "Testo": cell,
+                "Posizione": `Row ${rowIdx + 1}, Col ${colIdx + 1}`,
+                "ID": `table_${fileIndex}_${tableIdx}_${rowIdx}_${colIdx}`
+              };
+            }).filter(Boolean)
+          )
+        );
   
-        return {
-          "Filename": f.file.name,
-          "File_Size_KB": Math.round(f.file.size / 1024).toString(),
-          "Analysis_Timestamp": new Date().toISOString(),
-          "Location_Entities": formatEntities(f.result?.entities ?? [], 'LOC'),
-          "Organization_Entities": formatEntities(f.result?.entities ?? [], 'ORG'),
-          "Geographic_Entities": formatEntities(f.result?.entities ?? [], 'GPE'),
-          "Environmental_Matches": formatMatches(f.result?.matches ?? [], 'ENVIRONMENTAL'),
-          "Turbine_Specifications": formatMatches(f.result?.matches ?? [], 'TURBINE'),
-          "Cadastral_References": formatMatches(f.result?.matches ?? [], 'CADASTRAL'),
-          "Number_of_Tables": (f.result?.tables ?? []).length.toString(),
-          "Tables_Detail": formatTables(f.result?.tables ?? [])
-        };
+        return [...entityRows, ...matchRows, ...tableRows];
       });
   
-    // Ensure consistent column headers and handle empty results
-    const headers = [
-      "Filename",
-      "File_Size_KB",
-      "Analysis_Timestamp",
-      "Location_Entities",
-      "Organization_Entities",
-      "Geographic_Entities",
-      "Environmental_Matches",
-      "Turbine_Specifications",
-      "Cadastral_References",
-      "Number_of_Tables",
-      "Tables_Detail"
-    ];
-  
-    // Create CSV content with consistent typing
-    const csvContent = [
-      headers.join(','),
-      ...results.map(row => 
-        headers.map(header => {
-          const value = row[header] || '';
-          // Ensure all values are treated as strings
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }).join(',')
-      )
-    ].join('\n');
+    // Convert to CSV using PapaParse
+    const csvString = Papa.unparse(results, {
+      header: true,
+      delimiter: ",",
+      newline: "\n",
+      quotes: true,
+      quoteChar: '"',
+      escapeChar: '"',
+      skipEmptyLines: true
+    });
   
     // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
