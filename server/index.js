@@ -5,7 +5,12 @@ import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const VALID_STATUSES = [
   'Valutazione preliminare',
@@ -155,130 +160,8 @@ app.get('/api/search', async (req, res) => {
       details: error.message
     });
   }})
-// app.get('/api/search', async (req, res) => {
-//   try {
-//     const { keyword = '', status } = req.query;
-//     // Use the page parameter only for the final (re‑paginated) results.
-//     const requestedPage = parseInt(req.query.page || '1', 10);
 
-//     if (!keyword.trim()) {
-//       return res.status(400).json({ error: 'Keyword is required' });
-//     }
 
-//     const searchEndpoint = "/it-IT/Ricerca/ViaLibera";
-//     const params = new URLSearchParams({
-//       Testo: keyword.trim(),
-//       t: 'o'
-//     });
-
-//     // -----------------------------------
-//     // Step 1. Fetch the first page to determine total pages
-//     // -----------------------------------
-//     const firstPageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=1`;
-//     console.log('Fetching URL for pagination metadata:', firstPageUrl);
-//     const firstResponse = await fetch(firstPageUrl, {
-//       headers: {
-//         'User-Agent': 'Mozilla/5.0',
-//         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-//         'Accept-Language': 'en-US,en;q=0.5'
-//       }
-//     });
-
-//     if (!firstResponse.ok) {
-//       throw new Error(`HTTP error on page 1! status: ${firstResponse.status}`);
-//     }
-
-//     const firstHtml = await firstResponse.text();
-//     const $first = cheerio.load(firstHtml);
-//     let scrapedTotalPages = 1;
-//     const paginationLabel = $first('.pagination .etichettaRicerca').text();
-//     const match = paginationLabel.match(/Pagina\s+(\d+)\s+di\s+(\d+)/);
-//     if (match) {
-//       scrapedTotalPages = parseInt(match[2], 10);
-//     }
-//     console.log(`External site reports ${scrapedTotalPages} total page(s)`);
-
-//     // -----------------------------------
-//     // Step 2. Fetch all pages to collect all projects, then filter them.
-//     // -----------------------------------
-//     // (You may consider fetching these concurrently if performance is an issue)
-//     let allProjects = [];
-
-//     // Helper function to process one page of results.
-//     const processPage = async (p) => {
-//       const pageUrl = `${BASE_URL}${searchEndpoint}?${params.toString()}&pagina=${p}`;
-//       console.log(`Fetching page ${p}: ${pageUrl}`);
-//       const response = await fetch(pageUrl, {
-//         headers: {
-//           'User-Agent': 'Mozilla/5.0',
-//           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-//           'Accept-Language': 'en-US,en;q=0.5'
-//         }
-//       });
-//       if (!response.ok) {
-//         console.warn(`Page ${p} fetch failed with status ${response.status}`);
-//         return;
-//       }
-//       const html = await response.text();
-//       const $ = cheerio.load(html);
-//       $('.ElencoViaVasRicerca tr').slice(1).each((i, row) => {
-//         const cells = $(row).find('td');
-//         if (cells.length >= 5) {
-//           const projectStatus = $(cells[2]).text().trim();
-//           // Apply filter if a valid status is provided
-//           if (status && status !== 'all' && VALID_STATUSES.includes(status)) {
-//             if (projectStatus !== status) {
-//               return; // Skip this row
-//             }
-//           }
-//           // Only add if the status is known (optional safeguard)
-//           if (VALID_STATUSES.includes(projectStatus)) {
-//             const infoLink = $(cells[3]).find('a').attr('href');
-//             const docLink = $(cells[4]).find('a').attr('href');
-//             const project = {
-//               title: $(cells[0]).text().trim(),
-//               proponent: $(cells[1]).text().trim(),
-//               status: projectStatus,
-//               url: infoLink ? new URL(infoLink, BASE_URL).href : '',
-//               doc_url: docLink ? new URL(docLink, BASE_URL).href : '',
-//               id: infoLink ? infoLink.split('/').pop() : `project-${i}-${p}`
-//             };
-//             allProjects.push(project);
-//           }
-//         }
-//       });
-//     };
-
-//     // For demonstration, we fetch sequentially. For performance, consider Promise.all over an array of pages.
-//     for (let p = 1; p <= scrapedTotalPages; p++) {
-//       await processPage(p);
-//     }
-
-//     // -----------------------------------
-//     // Step 3. Re‑paginate the filtered projects.
-//     // -----------------------------------
-//     const pageSize = 20; // Set your desired page size
-//     const totalFiltered = allProjects.length;
-//     const totalPages = Math.ceil(totalFiltered / pageSize);
-//     const startIndex = (requestedPage - 1) * pageSize;
-//     const paginatedProjects = allProjects.slice(startIndex, startIndex + pageSize);
-
-//     // Return results:
-//     res.json({
-//       projects: paginatedProjects,
-//       totalPages,
-//       currentPage: requestedPage,
-//       total: totalFiltered,
-//       validStatuses: VALID_STATUSES
-//     });
-//   } catch (error) {
-//     console.error('Server error in /api/search:', error);
-//     res.status(500).json({
-//       error: 'Failed to fetch data',
-//       details: error.message
-//     });
-//   }
-// });
 // -----------------------------------
 // /api/procedure
 // -----------------------------------
@@ -495,6 +378,77 @@ app.get('/api/download', async (req, res) => {
   }
 });
 
+
+
+
+// Add this after your existing endpoints
+let pythonProcess;
+
+function initializePythonProcess() {
+  const scriptPath = join(__dirname, 'nlp_service.py');
+  pythonProcess = spawn('python', [scriptPath]);
+  
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python Error: ${data}`);
+  });
+  
+  pythonProcess.on('close', (code) => {
+    console.log(`Python process exited with code ${code}`);
+    // Restart process if it crashes
+    setTimeout(initializePythonProcess, 1000);
+  });
+}
+
+// Initialize Python process on server start
+initializePythonProcess();
+
+app.post('/api/analyze-pdf', async (req, res) => {
+  try {
+    if (!pythonProcess) {
+      throw new Error('NLP service not initialized');
+    }
+
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ error: 'PDF content is required' });
+    }
+
+    // Send PDF content to Python process
+    pythonProcess.stdin.write(JSON.stringify({ content }) + '\n');
+
+    // Get response from Python process
+    const result = await new Promise((resolve, reject) => {
+      let data = '';
+      
+      const timeout = setTimeout(() => {
+        reject(new Error('NLP analysis timeout'));
+      }, 30000);
+
+      pythonProcess.stdout.once('data', (chunk) => {
+        clearTimeout(timeout);
+        data += chunk;
+        try {
+          const result = JSON.parse(data);
+          resolve(result);
+        } catch (e) {
+          reject(new Error('Invalid response from NLP service'));
+        }
+      });
+    });
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    res.json(result);
+  } catch (error) {
+    console.error('PDF Analysis error:', error);
+    res.status(500).json({ 
+      error: 'Failed to analyze PDF',
+      details: error.message 
+    });
+  }
+});
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {

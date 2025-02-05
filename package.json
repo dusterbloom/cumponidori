@@ -33,6 +33,8 @@
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "@types/pdfjs-dist": "^2.10.378"
+
   }
 }

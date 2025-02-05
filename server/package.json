@@ -11,7 +11,12 @@
       "cheerio": "^1.0.0-rc.12",
       "cors": "^2.8.5",
       "node-fetch": "^3.3.2",
-      "axios": "1.7.9"
+      "axios": "1.7.9",
+      "pdfjs-dist": "^3.11.174",
+      "pdf-parse": "^1.1.1"
+    },
+    "devDependencies": {
+      "@types/pdfjs-dist": "^2.10.378"
     },
     "engines": {
       "node": ">=18.0.0"
