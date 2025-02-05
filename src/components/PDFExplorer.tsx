@@ -33,16 +33,19 @@ interface AnalysisResult {
     label: string;
     start: number;
     end: number;
+    context: string;  // Added context field
   }>;
   matches: Array<{
     pattern: string;
     text: string;
     start: number;
     end: number;
+    context: string;  // Added context field
   }>;
   tables: Array<{
     page: number;
     data: string[][];
+    context?: string;  // Optional context for tables
   }>;
 }
 
@@ -160,24 +163,82 @@ const PDFExplorer: React.FC = () => {
     setPdfFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+
   const handleDownloadCSV = () => {
-    const results = pdfFiles.filter(f => f.result).map(f => ({
-      filename: f.file.name,
-      entities: f.result?.entities.map(e => `${e.text} (${e.label})`).join('; '),
-      matches: f.result?.matches.map(m => `${m.pattern}: ${m.text}`).join('; '),
-      tables: f.result?.tables.length || 0
-    }));
-
+    const results = pdfFiles
+      .filter(f => f.result)
+      .map(f => {
+        // Group entities by type with cleaner formatting
+        const formatEntities = (entities: any[], type: string) => 
+          entities
+            .filter(e => e.label === type)
+            .map(e => `${e.text} | ${e.context || ''}`)
+            .join(';;');
+  
+        // Format matches with cleaner structure
+        const formatMatches = (matches: any[], pattern: string) =>
+          matches
+            .filter(m => m.pattern === pattern)
+            .map(m => `${m.text} | ${m.context || ''}`)
+            .join(';;');
+  
+        // Format tables more cleanly
+        const formatTables = (tables: any[]) =>
+          tables.map((table, idx) => {
+            const headerRow = table.data[0]?.join(' | ');
+            const dataRows = table.data.slice(1, 3).map(row => row.join(' | '));
+            return `Table ${idx + 1} (Page ${table.page})::${headerRow}::${dataRows.join('::')}`;
+          }).join('||');
+  
+        return {
+          "Filename": f.file.name,
+          "File_Size_KB": Math.round(f.file.size / 1024).toString(),
+          "Analysis_Timestamp": new Date().toISOString(),
+          "Location_Entities": formatEntities(f.result?.entities ?? [], 'LOC'),
+          "Organization_Entities": formatEntities(f.result?.entities ?? [], 'ORG'),
+          "Geographic_Entities": formatEntities(f.result?.entities ?? [], 'GPE'),
+          "Environmental_Matches": formatMatches(f.result?.matches ?? [], 'ENVIRONMENTAL'),
+          "Turbine_Specifications": formatMatches(f.result?.matches ?? [], 'TURBINE'),
+          "Cadastral_References": formatMatches(f.result?.matches ?? [], 'CADASTRAL'),
+          "Number_of_Tables": (f.result?.tables ?? []).length.toString(),
+          "Tables_Detail": formatTables(f.result?.tables ?? [])
+        };
+      });
+  
+    // Ensure consistent column headers and handle empty results
+    const headers = [
+      "Filename",
+      "File_Size_KB",
+      "Analysis_Timestamp",
+      "Location_Entities",
+      "Organization_Entities",
+      "Geographic_Entities",
+      "Environmental_Matches",
+      "Turbine_Specifications",
+      "Cadastral_References",
+      "Number_of_Tables",
+      "Tables_Detail"
+    ];
+  
+    // Create CSV content with consistent typing
     const csvContent = [
-      ['Filename', 'Entities', 'Pattern Matches', 'Number of Tables'],
-      ...results.map(r => [r.filename, r.entities, r.matches, r.tables.toString()])
-    ].map(row => row.join(',')).join('\n');
-
+      headers.join(','),
+      ...results.map(row => 
+        headers.map(header => {
+          const value = row[header] || '';
+          // Ensure all values are treated as strings
+          return `"${value.toString().replace(/"/g, '""')}"`;
+        }).join(',')
+      )
+    ].join('\n');
+  
+    // Create and trigger download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'pdf_analysis_results.csv');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    link.setAttribute('download', `pdf_analysis_${timestamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
